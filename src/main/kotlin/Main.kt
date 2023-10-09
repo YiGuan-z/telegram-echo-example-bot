@@ -1,7 +1,22 @@
-fun main(args: Array<String>) {
-    println("Hello World!")
+import application.Application
+import module.echoChatHandler
+import module.jackson
+import module.redis.RedisService
+import module.redis.jacksonRedisCodec
+import module.redis.redisFactory
 
-    // Try adding program arguments via Run/Debug configuration.
-    // Learn more about running applications: https://www.jetbrains.com/help/idea/running-applications.html.
-    println("Program arguments: ${args.joinToString()}")
+fun main(args: Array<String>) = Application.main(args, Application::configModule)
+
+fun Application.configModule() {
+    install(jacksonRedisCodec) {
+        mapper = install(jackson)
+    }
+    install(redisFactory) {
+        url = env("TG_BOT_REDIS_URL")
+    }
+    install(echoChatHandler) {
+        redisService = RedisService()
+    }
 }
+
+

@@ -1,8 +1,9 @@
-package repository
+package module.redis
 
 import application.createAppPlugin
 import io.lettuce.core.RedisClient
 import io.lettuce.core.codec.RedisCodec
+import setOnce
 import java.nio.ByteBuffer
 
 /**
@@ -53,10 +54,10 @@ class RedisFactory(val conf: RedisConfiguration) {
     }
 }
 
-data class RedisConfiguration(
-    var url: String = ""
-)
+class RedisConfiguration {
+    var url: String by setOnce()
+}
 
 val redisFactory = createAppPlugin("redisFactory", ::RedisConfiguration) { config ->
-     RedisFactory(config).apply { RedisFactory.factory = this }
+    RedisFactory(config).apply { RedisFactory.factory = this }
 }

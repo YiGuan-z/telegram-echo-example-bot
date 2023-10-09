@@ -1,8 +1,10 @@
 package module.redis
 
+import application.BotDSL
+import application.createAppPlugin
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.lettuce.core.codec.RedisCodec
 import setOnce
-import java.io.Reader
 import java.nio.ByteBuffer
 
 /**
@@ -11,23 +13,23 @@ import java.nio.ByteBuffer
  * @date 2023/10/8-12:50
  * @doc
  **/
-class JacksonRedisCodec(config: GsonRedisCodecConfig) : RedisCodec<String, Any> {
+class JacksonRedisCodec(config: JacksonRedisCodecConfig) : RedisCodec<String, Any> {
     private val mapper = config.mapper
 
     override fun decodeKey(bytes: ByteBuffer): String {
-        return mapper.fromJson(bytes.getByte(),String::class.java)
+        return mapper.readValue<String>(bytes.getByte())
     }
 
     override fun decodeValue(bytes: ByteBuffer): Any {
-        TODO("Not yet implemented")
+        return mapper.readValue(bytes.getByte())
     }
 
     override fun encodeKey(key: String): ByteBuffer {
-        TODO("Not yet implemented")
+        return ByteBuffer.wrap(mapper.writeValueAsBytes(key))
     }
 
     override fun encodeValue(value: Any): ByteBuffer {
-        TODO("Not yet implemented")
+        return ByteBuffer.wrap(mapper.writeValueAsBytes(value))
     }
 
     companion object {
@@ -39,6 +41,18 @@ class JacksonRedisCodec(config: GsonRedisCodecConfig) : RedisCodec<String, Any> 
     }
 }
 
-class GsonRedisCodecConfig {
-    var mapper: Gson by setOnce()
+//@BotDSL
+class JacksonRedisCodecConfig {
+    var mapper: ObjectMapper by setOnce()
+}
+
+fun JacksonRedisCodecConfig.mapper(block: () -> ObjectMapper) {
+    this.mapper = block()
+}
+
+val jacksonRedisCodec = createAppPlugin(
+    "jacksonRedisCodec",
+    ::JacksonRedisCodecConfig
+) { config ->
+    return@createAppPlugin JacksonRedisCodec(config)
 }
