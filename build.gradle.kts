@@ -13,8 +13,8 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
-//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
-//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.9")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.7.1")
 //    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.3.9")
 //    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.3.9")
 //    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.0.2.RELEASE")
@@ -26,6 +26,9 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.15.2")
+    implementation("org.slf4j:slf4j-api:2.0.9")
+// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
+    implementation("ch.qos.logback:logback-classic:1.4.11")
 
     implementation("io.lettuce:lettuce-core:6.2.6.RELEASE")
     implementation("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.1.0")

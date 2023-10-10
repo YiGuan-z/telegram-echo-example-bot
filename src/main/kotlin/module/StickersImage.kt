@@ -9,9 +9,8 @@ import com.github.kotlintelegrambot.dispatcher.Dispatcher
  * @date 2023/10/2-14:02
  * @doc
  **/
-class StickersImageHandler:BotDispatcher{
-    override fun Dispatcher.dispatch() {
-
-    }
+class StickersImageHandler(override val dispatcherName: String, override val description: String) :BotDispatcher{
+    override val dispatch: Dispatcher.() -> Unit
+        get() = TODO("Not yet implemented")
 }
 

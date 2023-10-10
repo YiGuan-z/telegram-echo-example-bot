@@ -32,7 +32,9 @@ enum class Feature {
 
 /*------------------------------------------BOT-----------------------------------------*/
 interface BotDispatcher {
-    fun Dispatcher.dispatch()
+    val dispatch:Dispatcher.()->Unit
+    val dispatcherName: String
+    val description: String
 }
 
 interface BotDispatcherModule<ConfigT : Any, out DispatcherT : BotDispatcher> :

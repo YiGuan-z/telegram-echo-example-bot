@@ -20,7 +20,8 @@ import setOnce
 class EchoChatHandler(config: EchoChatHandlerConfiguration) :
     BotDispatcher {
     val redisService = config.redisService
-    override fun Dispatcher.dispatch() {
+
+    override val dispatch: Dispatcher.() -> Unit ={
         text("echo") {
             //或许可以抽象出一个责任链
             //或者在全局做路由，反正这个带text参数的方法挺抽象的。
@@ -36,12 +37,16 @@ class EchoChatHandler(config: EchoChatHandlerConfiguration) :
             bot.sendSticker(currentChat, remoteSticker(), replyMarkup = message.replyMarkup)
         }
     }
+
+    override val dispatcherName: String = "复读机"
+
+    override val description: String = "用于复读机"
 }
 
 fun MediaHandlerEnvironment<Sticker>.remoteSticker() = this.message.sticker?.fileId ?: ""
 
 class EchoChatHandlerConfiguration {
-    var redisService: RedisService<Any, Any> by setOnce()
+    var redisService: RedisService by setOnce()
 }
 
 val echoChatHandler = createBotDispatcherModule(

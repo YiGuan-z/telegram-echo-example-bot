@@ -9,6 +9,8 @@ import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.logging.LogLevel
 import env
 import module.bot
+import module.thisLogger
+import org.slf4j.Logger
 
 /**
  *
@@ -22,6 +24,8 @@ class Application(applicationConfig: ApplicationConfig) {
     protected val commandPlugins: MutableMap<AttributeKey, Any> = linkedMapOf()
     protected val botDispatcherModules: MutableMap<AttributeKey, BotDispatcher> = linkedMapOf()
     val appEnvironment: ApplicationConfig = applicationConfig
+    val logger: Logger = thisLogger<Application>()
+    val isDebug = logger.isDebugEnabled
 
     @BotDSL
     fun <Config : Any, Plugin : Any> install(
@@ -43,12 +47,14 @@ class Application(applicationConfig: ApplicationConfig) {
         return pluginInstance
     }
 
+    @BotDSL
     fun <Config : Any, PluginA : Any> instance(pluginInstance: ApplicationPluginInstance<Config, PluginA>): PluginA {
         val attributeKey = pluginInstance.attributeKey
         val feature = pluginInstance.feature
         return instance(feature, attributeKey)
     }
 
+    @BotDSL
     fun <PluginA> instance(feature: Feature, attributeKey: AttributeKey): PluginA {
         return when (feature) {
             Feature.App -> getPlugin(appPlugins, attributeKey)
@@ -78,12 +84,19 @@ class Application(applicationConfig: ApplicationConfig) {
         fun main(args: Array<String>, block: Application.() -> Unit) {
             val environment = getConfigFromArgs(args, getConfigFromArgs(args))
             val application = Application(environment)
+                .apply(init)
                 .apply(block)
-                .also { it.configBot() }
+                .apply(configBot)
             application.instance(bot).startPolling()
+                .also { thisLogger<Application>().info("机器人已启动") }
         }
 
-        private fun Application.configBot() {
+        private val init: Application.() -> Unit = {
+            //打印banner
+            logger.info("")
+        }
+
+        private val configBot: Application.() -> Unit = {
             install(bot) {
                 token = env("TG_BOT_TOKEN")
                 logLevel = LogLevel.Error
@@ -91,6 +104,8 @@ class Application(applicationConfig: ApplicationConfig) {
                     val dispatcher = this
                     botDispatcherModules.forEach { (_, botDispatcherModule) ->
                         botDispatcherModule.apply { dispatcher.dispatch() }
+                        logger.info("Bot Dispatcher Module loaded: {}", botDispatcherModule.dispatcherName)
+                        logger.info("Bot Dispatcher Module description: {}", botDispatcherModule.description)
                     }
                 }
             }
