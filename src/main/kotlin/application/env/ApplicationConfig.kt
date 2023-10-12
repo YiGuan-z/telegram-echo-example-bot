@@ -55,7 +55,7 @@ open class MapApplicationConfig : ApplicationConfig {
     }
 
     override fun property(path: String): ApplicationConfigValue {
-        return propertyOrNull(path) ?: throw IllegalArgumentException("Property $path not found")
+        return propertyOrNull(path) ?: throw ApplicationConfigurationException("Property $path not found")
     }
 
     override fun propertyOrNull(path: String): ApplicationConfigValue? {
@@ -74,7 +74,7 @@ open class MapApplicationConfig : ApplicationConfig {
 
     override fun configList(path: String): List<ApplicationConfig> {
         val key = combine(this.path, path)
-        val size = map[combine(key, "size")] ?: throw IllegalArgumentException("property $key.size not found")
+        val size = map[combine(key, "size")] ?: throw ApplicationConfigurationException("property $key.size not found")
         return (0..<size.toInt()).map { MapApplicationConfig(map, combine(key, it.toString())) }
     }
 
@@ -126,7 +126,7 @@ open class MapApplicationConfig : ApplicationConfig {
         }
 
         override fun getList(): List<String> {
-            val size = map[combine(path, "size")] ?: throw IllegalArgumentException("Property $path.size not found")
+            val size = map[combine(path, "size")] ?: throw ApplicationConfigurationException("Property $path.size not found")
             return (0..<size.toInt()).map { map[combine(path, it.toString())]!! }
         }
 
@@ -226,6 +226,7 @@ interface ConfigLoader {
     }
 }
 
+class ApplicationConfigurationException(message: String,cause:Throwable? = null) : RuntimeException(message,cause)
 
 //获取配置的加载器
 private val configLoaders: List<ConfigLoader> = ConfigLoader::class.java.let {

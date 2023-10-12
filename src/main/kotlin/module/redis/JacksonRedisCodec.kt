@@ -1,6 +1,5 @@
 package module.redis
 
-import application.BotDSL
 import application.createAppPlugin
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.lettuce.core.codec.RedisCodec

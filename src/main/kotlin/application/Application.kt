@@ -7,7 +7,6 @@ import application.env.MapApplicationConfig
 import application.env.mergeWith
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.logging.LogLevel
-import env
 import module.bot
 import module.thisLogger
 import org.slf4j.Logger
@@ -82,7 +81,7 @@ class Application(applicationConfig: ApplicationConfig) {
 
     companion object {
         fun main(args: Array<String>, block: Application.() -> Unit) {
-            val environment = getConfigFromArgs(args, getConfigFromArgs(args))
+            val environment = buildApplicationConfig(args)
             val application = Application(environment)
                 .apply(init)
                 .apply(block)
@@ -91,14 +90,23 @@ class Application(applicationConfig: ApplicationConfig) {
                 .also { thisLogger<Application>().info("机器人已启动") }
         }
 
+
         private val init: Application.() -> Unit = {
             //打印banner
-            logger.info("")
+            logger.info("application正在启动")
+            banner?.let { logger.info(it) }
         }
+
+        private val banner: String? =
+            runCatching {
+                this::class.java.classLoader.getResourceAsStream("banner.txt")?.readBytes()?.readToString()
+            }.getOrNull()
+
 
         private val configBot: Application.() -> Unit = {
             install(bot) {
-                token = env("TG_BOT_TOKEN")
+//                token = env("TG_BOT_TOKEN")
+                token = appEnvironment.config("bot").property("tg_token").getString()
                 logLevel = LogLevel.Error
                 dispatch {
                     val dispatcher = this
@@ -114,6 +122,8 @@ class Application(applicationConfig: ApplicationConfig) {
 
     }
 }
+
+private fun ByteArray.readToString() = String(this)
 
 private fun buildEnvironment(args: Array<String>): ApplicationConfig {
     val list = args.mapNotNull { it.splitPair('=') }
@@ -135,21 +145,8 @@ internal fun getConfigFormJvmEnvironment(): ApplicationConfig = System.getProper
 internal fun getConfigFormSystemEnvironment(): ApplicationConfig =
     MapApplicationConfig(System.getenv().map { it.key as String to it.value as String })
 
-internal fun getConfigFromArgs(args: Array<String>): ApplicationConfig =
-    if (args.isEmpty()) {
-        val jvmEnvironment = getConfigFormJvmEnvironment()
-        val systemEnvironment = getConfigFormSystemEnvironment()
-        systemEnvironment.mergeWith(jvmEnvironment)
-    } else {
+internal fun buildApplicationConfig(args: Array<String>): ApplicationConfig =
         buildEnvironment(args)
-    }
-
-internal fun getConfigFromArgs(args: Array<String>, environmentConfig: ApplicationConfig): ApplicationConfig =
-    if (args.isEmpty()) {
-        environmentConfig
-    } else {
-        buildEnvironment(args)
-    }
 
 internal fun String.splitPair(separator: Char): Pair<String, String>? {
     val index = indexOf(separator)
