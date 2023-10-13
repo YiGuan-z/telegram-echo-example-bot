@@ -35,16 +35,18 @@ class YamlConfig(
 
     override fun propertyOrNull(path: String): ApplicationConfigValue? {
         val paths = path.split('.')
+        //cd到当前路径的上一级
         val yaml = paths.dropLast(1).fold(yamlMap) { yaml, pat -> yaml[pat] as? YamlMap ?: return null }
+        //获取其中的当前行
         val value = yaml[paths.last()] ?: return null
         return when (value) {
-            is YamlLiteral -> resolveValue(value.content, root)?.let { YamlLiteralValue(path, it) }
+            is YamlLiteral -> resolveValue(value.content, root)?.let { ConfigLiteralValue(path, it) }
             is YamlList -> {
                 val list = value.content.map { element ->
                     element.asLiteralOrNull()?.content?.let { resolveValue(it, root) }
                         ?: throw ApplicationConfigurationException("$element is not a literal")
                 }
-                return YamlListValue(path, list)
+                return ConfigListValue(path, list)
             }
 
             else -> throw ApplicationConfigurationException("Expected a literal or a list, but got $value")
@@ -103,12 +105,12 @@ class YamlConfig(
         return primitive as? Map<String,Any?> ?: throw IllegalArgumentException("Top level element is not a map")
     }
 
-    class YamlLiteralValue(private val key: String, private val value: String) : ApplicationConfigValue {
+    class ConfigLiteralValue(private val key: String, private val value: String) : ApplicationConfigValue {
         override fun getString(): String = value
         override fun getList(): List<String> = throw ApplicationConfigurationException("Property $key is not a list")
     }
 
-    class YamlListValue(private val key: String, private val values: List<String>) : ApplicationConfigValue {
+    class ConfigListValue(private val key: String, private val values: List<String>) : ApplicationConfigValue {
         override fun getString(): String = throw ApplicationConfigurationException("Property $key is not a string")
         override fun getList(): List<String> = values
     }

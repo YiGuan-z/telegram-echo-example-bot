@@ -47,9 +47,9 @@ class Application(applicationConfig: ApplicationConfig) {
     }
 
     @BotDSL
-    fun <Config : Any, PluginA : Any> instance(pluginInstance: ApplicationPluginInstance<Config, PluginA>): PluginA {
-        val attributeKey = pluginInstance.attributeKey
-        val feature = pluginInstance.feature
+    fun <Config : Any, PluginA : Any> instance(pluginProvider: ApplicationPluginInstance<Config, PluginA>): PluginA {
+        val attributeKey = pluginProvider.attributeKey
+        val feature = pluginProvider.feature
         return instance(feature, attributeKey)
     }
 
@@ -59,6 +59,31 @@ class Application(applicationConfig: ApplicationConfig) {
             Feature.App -> getPlugin(appPlugins, attributeKey)
             Feature.Command -> getPlugin(commandPlugins, attributeKey)
             Feature.BotDispatcher -> getPlugin(botDispatcherModules, attributeKey)
+        }
+    }
+
+    /**
+     * 如果已安装，则返回实例，如果未安装，则安装后返回实例
+     */
+    @BotDSL
+    fun <ConfigT : Any, PluginA : Any> installAndInstance(
+        pluginProvider: ApplicationPluginInstance<ConfigT, PluginA>
+    ): PluginA {
+        return runCatching { instance(pluginProvider) }.getOrNull() ?: install(pluginProvider)
+    }
+
+    /**
+     * 检查是否已安装
+     */
+    @BotDSL
+    fun <ConfigT : Any, PluginA : Any> checkInstall(
+        pluginProvider: ApplicationPluginInstance<ConfigT, PluginA>
+    ): Boolean {
+        return try {
+            instance(pluginProvider)
+            true
+        } catch (ignore: Exception) {
+            false
         }
     }
 
@@ -105,7 +130,6 @@ class Application(applicationConfig: ApplicationConfig) {
 
         private val configBot: Application.() -> Unit = {
             install(bot) {
-//                token = env("TG_BOT_TOKEN")
                 token = appEnvironment.config("bot").property("tg_token").getString()
                 logLevel = LogLevel.Error
                 dispatch {
@@ -146,7 +170,7 @@ internal fun getConfigFormSystemEnvironment(): ApplicationConfig =
     MapApplicationConfig(System.getenv().map { it.key as String to it.value as String })
 
 internal fun buildApplicationConfig(args: Array<String>): ApplicationConfig =
-        buildEnvironment(args)
+    buildEnvironment(args)
 
 internal fun String.splitPair(separator: Char): Pair<String, String>? {
     val index = indexOf(separator)

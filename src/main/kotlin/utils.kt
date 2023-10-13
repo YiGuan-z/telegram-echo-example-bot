@@ -1,3 +1,4 @@
+import java.nio.ByteBuffer
 import kotlin.properties.Delegates
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
@@ -33,3 +34,8 @@ class SetOnce<T : Any> : ReadWriteProperty<Any?, T> {
     }
 }
 
+fun ByteBuffer.getByte(): ByteArray {
+    val byteArray = ByteArray(this.remaining())
+    get(byteArray)
+    return byteArray
+}

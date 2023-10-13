@@ -2,6 +2,7 @@ package module.redis
 
 import application.createAppPlugin
 import com.fasterxml.jackson.databind.ObjectMapper
+import getByte
 import io.lettuce.core.codec.RedisCodec
 import setOnce
 import java.nio.ByteBuffer
@@ -31,13 +32,6 @@ class JacksonRedisCodec(config: JacksonRedisCodecConfig) : RedisCodec<String, An
         return ByteBuffer.wrap(mapper.writeValueAsBytes(value))
     }
 
-    companion object {
-        private fun ByteBuffer.getByte(): ByteArray {
-            val byteArray = ByteArray(this.remaining())
-            get(byteArray)
-            return byteArray
-        }
-    }
 }
 
 //@BotDSL
