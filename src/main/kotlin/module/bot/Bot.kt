@@ -1,4 +1,4 @@
-package module
+package module.bot
 
 import application.createAppPlugin
 import com.github.kotlintelegrambot.Bot

@@ -1,4 +1,4 @@
-package module
+package module.bot
 
 import application.BotDispatcher
 import application.createBotDispatcherModule
@@ -8,6 +8,7 @@ import com.github.kotlintelegrambot.dispatcher.sticker
 import com.github.kotlintelegrambot.dispatcher.text
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.stickers.Sticker
+import module.currentChatId
 import module.redis.RedisService
 import setOnce
 

@@ -1,18 +1,19 @@
 import application.Application
 import application.getJsonFiles
 import application.i18n
-import module.echoChatHandler
+import module.bot.echoChatHandler
 import module.jackson
 import module.redis.RedisFactory
 import module.redis.RedisService
 import module.redis.jacksonRedisCodec
 import module.redis.redisFactory
-import module.testHandler
-import java.io.File
+import module.request.httpClient
 
 fun main(args: Array<String>) = Application.main(args, Application::configModule)
 
 fun Application.configModule() {
+    install(httpClient)
+
     install(jackson)
 
     install(i18n) {
@@ -31,7 +32,6 @@ fun Application.configModule() {
         redisService = RedisService(redisAsyncClient, instance(jackson))
     }
 
-    install(testHandler)
 }
 
 

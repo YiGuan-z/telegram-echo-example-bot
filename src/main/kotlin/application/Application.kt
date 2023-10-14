@@ -7,7 +7,7 @@ import application.env.MapApplicationConfig
 import application.env.mergeWith
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.logging.LogLevel
-import module.bot
+import module.bot.bot
 import module.thisLogger
 import org.slf4j.Logger
 
@@ -93,12 +93,15 @@ class Application(applicationConfig: ApplicationConfig) {
             throw IllegalStateException("Plugin $attributeKey already installed.")
         }
         plugins[attributeKey] = plugin
+        logger.trace("[Application] plugin {} loaded", attributeKey.key)
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun <PluginA, V : Any> getPlugin(plugins: Map<AttributeKey, V>, attributeKey: AttributeKey): PluginA {
         if (attributeKey !in plugins) {
-            throw IllegalStateException("Plugin $attributeKey not installed.")
+            val exception = IllegalStateException("Plugin $attributeKey not installed.")
+            logger.error("[Application] error", exception)
+            throw exception
         }
         return plugins[attributeKey] as PluginA
     }

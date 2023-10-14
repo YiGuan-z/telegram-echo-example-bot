@@ -31,7 +31,8 @@ interface LanguagePack {
     fun getString(key: String): String
 
     //被format后的字符串
-    fun getString(key: String, vararg args: Any): String
+    fun getString(key: String, mark: String, arg: String): String
+    fun getString(key: String, vararg props: Pair<String, String>): String
 }
 
 internal class I18nPacksImpl(private val root: Map<String, Any>) : I18nPacks {
@@ -40,7 +41,7 @@ internal class I18nPacksImpl(private val root: Map<String, Any>) : I18nPacks {
 
         @Suppress("unchecked_cast")
         val lang = row as? Map<String, Any> ?: throw I18nBuildException("$language is not a map")
-        return LanguagePackImpl(lang, "",language)
+        return LanguagePackImpl(lang, "", language)
     }
 
     override fun keys(): Set<String> {
@@ -51,12 +52,13 @@ internal class I18nPacksImpl(private val root: Map<String, Any>) : I18nPacks {
 internal class LanguagePackImpl(
     private val root: Map<String, Any>,
     private val path: String,
-    val lang:String
+    @Suppress("MemberVisibilityCanBePrivate")
+    val lang: String
 ) : LanguagePack {
     val isRoot = path.isEmpty()
 
     override fun pack(path: String): LanguagePack {
-        return LanguagePackImpl(root, combine(this.path, path),lang)
+        return LanguagePackImpl(root, combine(this.path, path), lang)
     }
 
     override fun getString(key: String): String {
@@ -68,8 +70,16 @@ internal class LanguagePackImpl(
         return fold[key] as String
     }
 
-    override fun getString(key: String, vararg args: Any): String {
-        return getString(key).format(args)
+    override fun getString(key: String, mark: String, arg: String): String {
+        return getString(key).replace("{${mark}}", arg)
+    }
+
+    override fun getString(key: String, vararg props: Pair<String, String>): String {
+        var text = getString(key)
+        for ((mark, arg) in props) {
+            text = text.replace("{${mark}}", arg)
+        }
+        return text
     }
 }
 
@@ -140,20 +150,18 @@ private fun combine(root: String, relative: String): String = if (root.isEmpty()
 fun Application.getJsonFiles(): Map<String, Map<String, Any>> {
     val mapper = installAndInstance(jackson)
     val url = Thread.currentThread().contextClassLoader.getResource("i18n")?.toURI()
-    val file = File(url ?: throw RuntimeException("i18n folder not found"))
-    if (!file.exists()) {
+    val files = File(url ?: throw RuntimeException("i18n folder not found"))
+    if (!files.exists()) {
         throw RuntimeException("i18n folder not found")
     }
-    val jsons = file.listFiles()
-    if (jsons != null) {
-        if (jsons.isEmpty()) throw RuntimeException("need i18n files")
-    }
+    val jsons = files.listFiles() ?: throw RuntimeException("need i18n files")
     val languages = jsons.associate { file ->
         logger.info("reading {}", file.name)
         val fileName = file.name
         val language = fileName.dropLast(fileName.indexOf(".json"))
         val reader = file.bufferedReader()
         val map = mapper.readValue(reader.readText(), Map::class.java)
+
         @Suppress("unchecked_cast")
         val data = map as? Map<String, Any> ?: throw IllegalArgumentException("json file is not valid")
         language to data

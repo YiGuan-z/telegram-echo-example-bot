@@ -1,4 +1,4 @@
-package module
+package module.bot
 
 import application.BotDispatcher
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
