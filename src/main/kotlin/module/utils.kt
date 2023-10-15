@@ -1,5 +1,6 @@
 package module
 
+import com.github.kotlintelegrambot.dispatcher.handlers.CommandHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.handlers.TextHandlerEnvironment
 import com.github.kotlintelegrambot.entities.ChatId
 
@@ -10,3 +11,4 @@ import com.github.kotlintelegrambot.entities.ChatId
  * @doc
  **/
 fun TextHandlerEnvironment.currentChatId() = ChatId.fromId(message.chat.id)
+fun CommandHandlerEnvironment.currentChatId() = ChatId.fromId(message.chat.id)

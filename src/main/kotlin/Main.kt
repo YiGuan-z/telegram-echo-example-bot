@@ -1,7 +1,7 @@
 import application.Application
 import application.getJsonFiles
 import application.i18n
-import module.bot.echoChatHandler
+import module.bot.*
 import module.jackson
 import module.redis.RedisFactory
 import module.redis.RedisService
@@ -9,7 +9,7 @@ import module.redis.jacksonRedisCodec
 import module.redis.redisFactory
 import module.request.httpClient
 
-fun main(args: Array<String>) = Application.main(args, Application::configModule)
+suspend fun main(args: Array<String>) = Application.main(args, Application::configModule)
 
 fun Application.configModule() {
     install(httpClient)
@@ -28,10 +28,22 @@ fun Application.configModule() {
     }
 
     val redisAsyncClient = RedisFactory.newAsyncClient(instance(jacksonRedisCodec))
+    val redisService = RedisService(redisAsyncClient, instance(jackson))
+
     install(echoChatHandler) {
-        redisService = RedisService(redisAsyncClient, instance(jackson))
+        setRedisService(redisService)
     }
 
+    install(initUserHandler) {
+        setRedisService(redisService)
+        setDefaultLang(appEnvironment.property("bot.lang.default").getString())
+    }
+
+    install(langCommand) {
+        setRedisService(redisService)
+        setI18n(instance(i18n))
+        languageChangeCommand = "lang"
+    }
 }
 
 

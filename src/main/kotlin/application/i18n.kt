@@ -2,6 +2,8 @@ package application
 
 import module.jackson
 import java.io.File
+import java.nio.file.FileSystem
+import java.nio.file.FileSystems
 
 /**
  *
@@ -62,12 +64,12 @@ internal class LanguagePackImpl(
     }
 
     override fun getString(key: String): String {
-        val parts = this.path.split('.')
-        val fold = parts.fold(root) { node, pat ->
+        val parts = combine(this.path, key).split('.')
+        val fold = parts.dropLast(1).fold(root) { node, pat ->
             @Suppress("unchecked_cast")
             node[pat] as? Map<String, Any> ?: throw I18nBuildException("$pat is not a map")
         }
-        return fold[key] as String
+        return fold[parts.last()] as String
     }
 
     override fun getString(key: String, mark: String, arg: String): String {
@@ -107,7 +109,7 @@ class I18nPacksBuildScope {
     fun build(): I18nPacks {
         return I18nPacksImpl(languages).apply { checkLang() }
     }
-
+    //TODO 或许这里需要替换为生成语言包的函数，并将函数传递给I18nPacksImpl中，并添加一个reload方法，控制它可重新构建语言包
     private fun checkLang() {
         languages.forEach { (lang, data) ->
             if (lang.isBlank()) {

@@ -1,5 +1,11 @@
 {
-  "test": "你好",
-  "test1": {"hello": "啊啊啊"},
-  "job_running": "{job} is running"
+  "lang": {
+    "lang_choose_prompt": "将要切换的语言为: {lang}",
+    "lang_select_msg": "可供选择的列表为\n{list}",
+    "lang_changed":"成功切换到 {lang}"
+  },
+  "error": {
+    "lang_command_other_error": "语言切换处理器出现错误，详情请检查日志信息",
+    "lang_command_user_error": "切换语言失败，请稍后再试"
+  }
 }

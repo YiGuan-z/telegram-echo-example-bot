@@ -2,3 +2,13 @@ bot:
   # 变量值使用$包裹就代表是环境变量，会自动从环境中获取并设置
   tg_token: $TG_BOT_TOKEN
   redis_url: $TG_BOT_REDIS_URL
+  lang:
+    default: zh_CN
+  images:
+    # 文件存储的路径
+    file_storage: ./storage
+    # 文件转换路径
+    image_convert_path: convert
+    max_images: 50
+    # 贴纸来源
+    sticker_sources: [ "https://t.me/addstickers/","https://t.me/addstickers/" ]

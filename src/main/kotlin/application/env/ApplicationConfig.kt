@@ -1,5 +1,7 @@
 package application.env
 
+import GlobalResource
+import application.Application
 import java.util.*
 
 /**
@@ -23,6 +25,10 @@ interface ApplicationConfigValue {
     fun getString(): String
     fun getList(): List<String>
 }
+
+fun ApplicationConfigValue.getStringOrNull() = runCatching { getString() }.getOrNull()
+fun ApplicationConfigValue.getListOrNull() = runCatching { getList() }.getOrNull()
+
 
 open class MapApplicationConfig : ApplicationConfig {
     protected val map: MutableMap<String, String>
@@ -126,7 +132,8 @@ open class MapApplicationConfig : ApplicationConfig {
         }
 
         override fun getList(): List<String> {
-            val size = map[combine(path, "size")] ?: throw ApplicationConfigurationException("Property $path.size not found")
+            val size =
+                map[combine(path, "size")] ?: throw ApplicationConfigurationException("Property $path.size not found")
             return (0..<size.toInt()).map { map[combine(path, it.toString())]!! }
         }
 
@@ -226,7 +233,7 @@ interface ConfigLoader {
     }
 }
 
-class ApplicationConfigurationException(message: String,cause:Throwable? = null) : RuntimeException(message,cause)
+class ApplicationConfigurationException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 //获取配置的加载器
 private val configLoaders: List<ConfigLoader> = ConfigLoader::class.java.let {
@@ -239,3 +246,4 @@ private val configPath: List<String>
         System.getProperty("config.resource")?.let { add(it) }
         System.getProperty("config.url")?.let { add(it) }
     }
+

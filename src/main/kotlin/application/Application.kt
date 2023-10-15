@@ -1,12 +1,11 @@
 package application
 
-import application.env.ApplicationConfig
-import application.env.ConfigLoader
+import GlobalResource
+import application.env.*
 import application.env.ConfigLoader.Default.load
-import application.env.MapApplicationConfig
-import application.env.mergeWith
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.logging.LogLevel
+import kotlinx.coroutines.coroutineScope
 import module.bot.bot
 import module.thisLogger
 import org.slf4j.Logger
@@ -108,18 +107,26 @@ class Application(applicationConfig: ApplicationConfig) {
 
 
     companion object {
-        fun main(args: Array<String>, block: Application.() -> Unit) {
+        suspend fun main(args: Array<String>, block: suspend Application.() -> Unit) {
             val environment = buildApplicationConfig(args)
             val application = Application(environment)
-                .apply(init)
-                .apply(block)
-                .apply(configBot)
+            coroutineScope {
+                application
+                    .apply(configurationGlobalResource)
+                    .apply { init() }
+                    .apply { block() }
+                    .apply(configBot)
+            }
             application.instance(bot).startPolling()
                 .also { thisLogger<Application>().info("机器人已启动") }
         }
 
+        private val configurationGlobalResource: Application.() -> Unit = {
+            val defaultLang = appEnvironment.property("bot.lang.default").getStringOrNull() ?: "zh_CN"
+            GlobalResource.defaultLang = defaultLang
+        }
 
-        private val init: Application.() -> Unit = {
+        private val init: suspend Application.() -> Unit = {
             //打印banner
             logger.info("application正在启动")
             banner?.let { logger.info(it) }

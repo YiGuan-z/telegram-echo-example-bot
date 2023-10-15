@@ -1,5 +1,6 @@
 package module.bot
 
+import application.BotDSL
 import application.BotDispatcher
 import application.createBotDispatcherModule
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
@@ -18,11 +19,11 @@ import setOnce
  * @date 2023/10/2-18:34
  * @doc 复读机模式
  **/
-class EchoChatHandler(config: EchoChatHandlerConfiguration) :
+class EchoChatHandler(config: ChatHandlerConfiguration) :
     BotDispatcher {
     val redisService = config.redisService
 
-    override val dispatch: Dispatcher.() -> Unit ={
+    override val dispatch: Dispatcher.() -> Unit = {
         text("echo") {
             //或许可以抽象出一个责任链
             //或者在全局做路由，反正这个带text参数的方法挺抽象的。
@@ -46,13 +47,17 @@ class EchoChatHandler(config: EchoChatHandlerConfiguration) :
 
 fun MediaHandlerEnvironment<Sticker>.remoteSticker() = this.message.sticker?.fileId ?: ""
 
-class EchoChatHandlerConfiguration {
+open class ChatHandlerConfiguration {
     var redisService: RedisService by setOnce()
+}
+@BotDSL
+fun ChatHandlerConfiguration.setRedisService(redisService: RedisService) {
+    this.redisService = redisService
 }
 
 val echoChatHandler = createBotDispatcherModule(
     "echoChatHandler",
-    ::EchoChatHandlerConfiguration
+    ::ChatHandlerConfiguration
 ) { config ->
     EchoChatHandler(config)
 }
