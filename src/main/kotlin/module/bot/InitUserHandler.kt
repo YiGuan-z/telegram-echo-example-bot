@@ -1,6 +1,7 @@
 package module.bot
 
 import application.BotDispatcher
+import application.Language
 import application.createBotDispatcherModule
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.text
@@ -21,7 +22,7 @@ class InitUserHandler(val redisService: RedisService, val defaultLang: String) :
             val redisPath = "${RedisKeys.userChatKeys}:${chatId.id}"
             val langProfile = redisService.get<ChatLangProfile>(redisPath)
             if (langProfile == null) {
-                redisService.set(redisPath, ChatLangProfile(chatId.id, defaultLang))
+                redisService.set(redisPath, ChatLangProfile(chatId.id, Language.of(defaultLang)))
             }
         }
     }

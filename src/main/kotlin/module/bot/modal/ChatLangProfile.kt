@@ -1,6 +1,7 @@
 package module.bot.modal
 
 import GlobalResource
+import application.Language
 
 /**
  *
@@ -10,5 +11,5 @@ import GlobalResource
  **/
 data class ChatLangProfile(
     val chatId: Long = -1,
-    val lang: String = GlobalResource.defaultLang
+    val lang: Language = Language.of(GlobalResource.defaultLang)
 )

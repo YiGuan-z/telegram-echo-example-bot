@@ -13,8 +13,7 @@ import java.nio.file.attribute.BasicFileAttributes
  * @doc
  **/
 fun Application.mkdirImageFinder() {
-    val images = appEnvironment.config("bot.images")
-    val fileStorage = images.property("file_storage").getString()
+    val fileStorage = appEnvironment.property("bot.images.file_storage").getString()
     val fsPath = Paths.get(fileStorage).toAbsolutePath()
     try {
         Files.readAttributes(fsPath, BasicFileAttributes::class.java)

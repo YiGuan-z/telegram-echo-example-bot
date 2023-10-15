@@ -2,8 +2,7 @@ package application
 
 import module.jackson
 import java.io.File
-import java.nio.file.FileSystem
-import java.nio.file.FileSystems
+import javax.annotation.processing.SupportedAnnotationTypes
 
 /**
  *
@@ -22,8 +21,9 @@ val i18n = createAppPlugin("i18n", ::I18nPacksBuildScope) {
 interface I18nPacks {
     // language = zh_CN
     // language = en_US
-    fun get(language: String): LanguagePack
+    fun get(language: Language): LanguagePack
     fun keys(): Set<String>
+    fun reload()
 }
 
 interface LanguagePack {
@@ -37,17 +37,65 @@ interface LanguagePack {
     fun getString(key: String, vararg props: Pair<String, String>): String
 }
 
-internal class I18nPacksImpl(private val root: Map<String, Any>) : I18nPacks {
-    override fun get(language: String): LanguagePack {
+internal class I18nPacksImpl(private val function: GenerateLanguages) : I18nPacks {
+    private var root: Map<Language, Any> = function()
+    override fun get(language: Language): LanguagePack {
         val row = root[language] ?: throw I18nBuildException("$language is not exist")
 
         @Suppress("unchecked_cast")
         val lang = row as? Map<String, Any> ?: throw I18nBuildException("$language is not a map")
-        return LanguagePackImpl(lang, "", language)
+        return LanguagePackImpl(lang, "", language.lang)
     }
 
     override fun keys(): Set<String> {
-        return root.keys
+        return root.keys.map { it.lang }.toSet()
+    }
+
+    override fun reload() {
+        root = function()
+    }
+
+    private fun checkLang() {
+        val property = -1
+        val checkStorage: MutableMap<String, Int> = mutableMapOf()
+        root.firstNotNullOf { (_, data) ->
+            @Suppress("unchecked_cast")
+            data as Map<String,Any>
+            data.forEach { (key, value) ->
+                if (value is Map<*, *>) {
+                    checkStorage[key] = value.size
+                } else {
+                    //String
+                    checkStorage[key] = property
+                }
+            }
+        }
+        root.forEach { (lang, data) ->
+            @Suppress("unchecked_cast")
+            data as Map<String,Any>
+            if (lang.isBlank()) {
+                throw I18nBuildException("language can not be blank")
+            }
+            data.forEach { (key, value) ->
+                if (key.isBlank()) {
+                    throw I18nBuildException("key can not be blank")
+                }
+                checkStorage[key]?.let {
+                    if (it == property) {
+                        //String
+                        value as? String ?: throw I18nBuildException("value must be String")
+                    } else {
+                        //Map
+                        @Suppress("unchecked_cast")
+                        val obj = value as? Map<String, String> ?: throw I18nBuildException("value must be a object")
+                        if (it !=obj.size){
+                            throw I18nBuildException("i18n json files must be the same size")
+                        }
+                    }
+                }
+            }
+            if (data.values.isEmpty()) throw I18nBuildException("language data can not be empty")
+        }
     }
 }
 
@@ -87,41 +135,30 @@ internal class LanguagePackImpl(
 
 class I18nBuildException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
+data class Language(val lang: String = "") {
+    companion object {
+        @JvmStatic
+        fun of(lang: String) = Language(lang)
+    }
+}
+
+fun Language.isBlank() = lang.isBlank()
+// zh_CN [{message:"消息"},messages:[{message1:"提示消息",message2:"重要消息"}]]
+typealias GenerateLanguages = () -> Map<Language, Map<String, Any>>
+
 class I18nPacksBuildScope {
     // Map value should be a map or string, so this is Any.
     // added TypePair using represents two types
-    internal val languages: MutableMap<String, Map<String, Any>> = mutableMapOf()
-
-    // zh_CN [{message:"消息"},messages:[{message1:"提示消息",message2:"重要消息"}]]
-    fun addPack(language: String, buildBlock: () -> Map<String, Any>) {
-        if (language.isBlank()) {
-            throw I18nBuildException("language can not be blank")
-        }
-
-        if (languages.containsKey(language)) {
-            throw I18nBuildException("language $language already exists")
-        }
-
-        val map = buildBlock()
-        languages[language] = map
-    }
+    internal val languages: MutableMap<Language, Map<String, Any>> = mutableMapOf()
+    var generateLanguages: GenerateLanguages? = null
 
     fun build(): I18nPacks {
-        return I18nPacksImpl(languages).apply { checkLang() }
+        val function = requireNotNull(generateLanguages) { "need get a generateLanguages function" }
+        @Suppress("INVISIBLE_MEMBER")
+        return I18nPacksImpl(function).apply { checkLang() }
     }
-    //TODO 或许这里需要替换为生成语言包的函数，并将函数传递给I18nPacksImpl中，并添加一个reload方法，控制它可重新构建语言包
-    private fun checkLang() {
-        languages.forEach { (lang, data) ->
-            if (lang.isBlank()) {
-                throw I18nBuildException("language can not be blank")
-            }
-            data.forEach {
-                if (it.key.isBlank()) {
-                    throw I18nBuildException("key can not be blank")
-                }
-            }
-        }
-    }
+
+
 
 }
 
@@ -149,7 +186,7 @@ private fun combine(root: String, relative: String): String = if (root.isEmpty()
     "$root.$relative"
 }
 
-fun Application.getJsonFiles(): Map<String, Map<String, Any>> {
+fun Application.getJsonFiles(): Map<Language, Map<String, Any>> {
     val mapper = installAndInstance(jackson)
     val url = Thread.currentThread().contextClassLoader.getResource("i18n")?.toURI()
     val files = File(url ?: throw RuntimeException("i18n folder not found"))
@@ -166,7 +203,7 @@ fun Application.getJsonFiles(): Map<String, Map<String, Any>> {
 
         @Suppress("unchecked_cast")
         val data = map as? Map<String, Any> ?: throw IllegalArgumentException("json file is not valid")
-        language to data
+        Language.of(language) to data
     }
     return languages
 }

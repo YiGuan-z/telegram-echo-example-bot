@@ -1,9 +1,6 @@
 package module.bot
 
-import application.BotDSL
-import application.BotDispatcher
-import application.I18nPacks
-import application.createBotDispatcherModule
+import application.*
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.command
 import module.bot.modal.ChatLangProfile
@@ -36,8 +33,11 @@ class LangCommand(
                     if (it.length == langCommand.length + 1) {
                         val replyMsg =
                             languagePack.getString("lang.lang_select_msg", "list", buildString {
+                                append('\n')
                                 i18nPacks.keys().forEach { lang ->
+                                    append('[')
                                     append(lang)
+                                    append(']')
                                     append('\n')
                                 }
                             })
@@ -45,12 +45,12 @@ class LangCommand(
                     } else {
                         val chooseLang = it.drop(langCommand.length + 1).trim()
                         bot.sendMessage(chatId, languagePack.getString("lang.lang_choose_prompt", "lang", chooseLang))
-                        redisService.set(redisPath, profile.copy(lang = chooseLang))
+                        redisService.set(redisPath, profile.copy(lang = Language.of(chooseLang)))
                         bot.sendMessage(chatId, languagePack.getString("lang.lang_changed", "lang", chooseLang))
                     }
                 }
             } catch (e: Exception) {
-                logger.error("[LangCommand] 语言切换处理器出现错误，详情请检查日志信息", e)
+                logger.error("[LangCommand] 会话 $chatId 的语言切换处理器出现错误，详情请检查日志信息", e)
                 bot.sendMessage(currentChatId(), languagePack.getString("lang.lang_command_user_error"))
             }
 

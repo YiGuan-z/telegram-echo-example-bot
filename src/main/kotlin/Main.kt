@@ -1,4 +1,5 @@
 import application.Application
+import application.Language
 import application.getJsonFiles
 import application.i18n
 import module.bot.*
@@ -17,7 +18,7 @@ fun Application.configModule() {
     install(jackson)
 
     install(i18n) {
-        getJsonFiles().forEach { addPack(it.key) { it.value } }
+        generateLanguages = { getJsonFiles() }
     }
     install(jacksonRedisCodec) {
         mapper = instance(jackson)

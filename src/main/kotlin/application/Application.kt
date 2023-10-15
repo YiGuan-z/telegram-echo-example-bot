@@ -7,6 +7,7 @@ import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.logging.LogLevel
 import kotlinx.coroutines.coroutineScope
 import module.bot.bot
+import module.mkdirImageFinder
 import module.thisLogger
 import org.slf4j.Logger
 
@@ -122,14 +123,22 @@ class Application(applicationConfig: ApplicationConfig) {
         }
 
         private val configurationGlobalResource: Application.() -> Unit = {
-            val defaultLang = appEnvironment.property("bot.lang.default").getStringOrNull() ?: "zh_CN"
-            GlobalResource.defaultLang = defaultLang
+            appEnvironment.property("bot.lang.default").getStringOrNull()?.let {
+                GlobalResource.defaultLang = it
+            }
+            appEnvironment.property("bot.master").getStringOrNull()?.let {
+                GlobalResource.adminName = it
+            }
+            appEnvironment.property("bot.images.file_storage").getStringOrNull()?.let {
+                GlobalResource.imageStorage = it
+            }
         }
 
         private val init: suspend Application.() -> Unit = {
             //打印banner
             logger.info("application正在启动")
             banner?.let { logger.info(it) }
+            mkdirImageFinder()
         }
 
         private val banner: String? =

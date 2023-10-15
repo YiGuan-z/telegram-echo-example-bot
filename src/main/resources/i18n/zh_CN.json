@@ -1,11 +1,12 @@
 {
   "lang": {
     "lang_choose_prompt": "将要切换的语言为: {lang}",
-    "lang_select_msg": "可供选择的列表为\n{list}",
+    "lang_select_msg": "可供选择的列表为{list}",
     "lang_changed":"成功切换到 {lang}"
   },
   "error": {
     "lang_command_other_error": "语言切换处理器出现错误，详情请检查日志信息",
-    "lang_command_user_error": "切换语言失败，请稍后再试"
+    "lang_command_user_error": "切换语言失败，请稍后再试",
+    "user_prompt": "哎呀，出现错误了，请联系 {user}并描述出现的问题"
   }
 }

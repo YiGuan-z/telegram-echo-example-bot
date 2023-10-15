@@ -1,11 +1,12 @@
 {
   "lang": {
     "lang_choose_prompt": "The language to be switched is: {lang}",
-    "lang_select_msg": "The list to choose from is\n{list}",
+    "lang_select_msg": "The list to choose from is:{list}",
     "lang_changed":"Successfully switched to {lang}"
   },
   "error": {
     "lang_command_other_error": "There is an error in the language switching processor. Please check the log information for details.",
-    "lang_command_user_error": "The language switching failed, please try again later."
+    "lang_command_user_error": "The language switching failed, please try again later.",
+    "user_prompt": "Oops, there was an error, please contact {user} and describe the problem."
   }
 }
