@@ -2,11 +2,24 @@
   "lang": {
     "lang_choose_prompt": "The language to be switched is: {lang}",
     "lang_select_msg": "The list to choose from is:{list}",
-    "lang_changed":"Successfully switched to {lang}"
+    "lang_changed": "Successfully switched to {lang}"
   },
   "error": {
     "lang_command_other_error": "There is an error in the language switching processor. Please check the log information for details.",
     "lang_command_user_error": "The language switching failed, please try again later.",
-    "user_prompt": "Oops, there was an error, please contact {user} and describe the problem."
+    "user_prompt": "Oops, there was an error, please contact {user} and describe the problem.",
+    "err_get_filelink": "There was an error in getting the address of the file {fileId}, skip..."
+  },
+  "newpack": {
+    "tasklocked": "You currently have a running task. Please wait until the task is completed.",
+    "taskexist": "You currently have a collection queue. Please end it first with the finish command. Send any text to get help.",
+    "newpack": "All right, when you're ready, send me an emoji or emoji link now! (up to {max})"
+  },
+  "nosticker": "Sorry, but there is no expression in your collection queue. Maybe the robot has restarted, or you haven't sent an emoji yet? Often use the newpack command to start.",
+  "downloadstep": {
+    "downloading": "[1/4] Download the picture...",
+    "converting": "[2/4] Convert the picture...",
+    "packaging": "[3/4] Pack all files...",
+    "sending": "[4/4] Sending a zip package, which may take a little time - rest, take a break!"
   }
 }

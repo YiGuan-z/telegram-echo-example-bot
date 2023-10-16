@@ -55,6 +55,12 @@ internal class I18nPacksImpl(private val function: GenerateLanguages) : I18nPack
         root = function()
     }
 
+    /**
+     * TODO 这里的检查函数需要进行深入检查
+     * 检查每一条字符串的对应标记
+     * 检查对象中的字段个数
+     * 以第一个为准，其它的如果发现与第一个不一致，那么就抛出异常并终止运行
+     */
     private fun checkLang() {
         val property = -1
         val checkStorage: MutableMap<String, Int> = mutableMapOf()

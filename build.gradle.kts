@@ -32,7 +32,10 @@ dependencies {
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
     implementation("ch.qos.logback:logback-classic:1.4.11")
     //https://github.com/coil-kt/coil/blob/main/README-zh.md
-//    implementation("io.coil-kt:coil:2.4.0")
+    //implementation("io.coil-kt:coil:2.4.0")
+    //https://github.com/bytedeco/javacv
+    //coil is android library, but running on the server
+    implementation("org.bytedeco:javacv-platform:1.5.9")
     //https://github.com/Him188/yamlkt
     implementation("net.mamoe.yamlkt:yamlkt:0.13.0")
     //request

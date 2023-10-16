@@ -1,8 +1,11 @@
 package module.redis
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.kotlintelegrambot.entities.ChatId
 import io.lettuce.core.api.async.RedisAsyncCommands
 import kotlinx.coroutines.future.await
+import module.bot.RedisKeys
+import module.bot.modal.ChatLangProfile
 import java.util.concurrent.TimeUnit
 
 /**
@@ -79,4 +82,12 @@ class RedisEntry<T : Any>(
 
         fun isEmpty(entry: RedisEntry<*>): Boolean = entry === EMPTY
     }
+}
+
+suspend fun RedisService.currentChatLangProfile(id: ChatId.Id): ChatLangProfile? {
+    return get<ChatLangProfile>("${RedisKeys.userChatKeys}:${id.id}")
+}
+
+suspend fun RedisService.setChatLangProfile(id: ChatId.Id, profile: ChatLangProfile) {
+    set("${RedisKeys.userChatKeys}:${id.id}", profile)
 }

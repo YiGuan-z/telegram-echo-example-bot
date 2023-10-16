@@ -2,11 +2,24 @@
   "lang": {
     "lang_choose_prompt": "将要切换的语言为: {lang}",
     "lang_select_msg": "可供选择的列表为{list}",
-    "lang_changed":"成功切换到 {lang}"
+    "lang_changed": "成功切换到 {lang}"
   },
   "error": {
     "lang_command_other_error": "语言切换处理器出现错误，详情请检查日志信息",
     "lang_command_user_error": "切换语言失败，请稍后再试",
-    "user_prompt": "哎呀，出现错误了，请联系 {user}并描述出现的问题"
+    "user_prompt": "哎呀，出现错误了，请联系 {user}并描述出现的问题",
+    "err_get_filelink": "获取文件 {fileId} 的地址时出错，跳过..."
+  },
+  "newpack": {
+    "tasklocked": "你当前正有一个运行中的任务，请稍候直到该任务完成。",
+    "taskexist": "你当前正有一个收集队列。请用 /finish 指令先结束掉它。发送任意文本获取帮助信息。",
+    "newpack": "好的，准备好了，现在向我发送表情或表情包链接吧！(最多 {max} 个) "
+  },
+  "nosticker": "抱歉，但你的收集队列里没有表情。也许是机器人重启了，或者是您还没有发送表情？常使用 /newpack 命令开始。",
+  "downloadstep": {
+    "downloading": "[1/4] 下载图片中...",
+    "converting": "[2/4] 转换图片中...",
+    "packaging": "[3/4] 打包所有文件...",
+    "sending": "[4/4] 正在发送zip压缩包，这可能需要一点时间——休息，休息一下！"
   }
 }

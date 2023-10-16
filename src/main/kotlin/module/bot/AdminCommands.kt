@@ -10,7 +10,7 @@ import com.github.kotlintelegrambot.dispatcher.Dispatcher
  * @date 2023/10/15-14:16
  * @doc 这里存放所有管理员的命令
  **/
-val adminCommands = createBotDispatcherModule("adminCommands",::Any){
+val adminCommands = createBotDispatcherModule("adminCommands",::AdminCommandsConfiguration){
     AdminCommands()
 }
 class AdminCommandsConfiguration{

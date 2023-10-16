@@ -132,6 +132,9 @@ class Application(applicationConfig: ApplicationConfig) {
             appEnvironment.property("bot.images.file_storage").getStringOrNull()?.let {
                 GlobalResource.imageStorage = it
             }
+            appEnvironment.property("bot.images.max_images").getStringOrNull()?.let {
+                GlobalResource.maxImages = it.toInt()
+            }
         }
 
         private val init: suspend Application.() -> Unit = {

@@ -1,7 +1,5 @@
 package application.env
 
-import GlobalResource
-import application.Application
 import java.util.*
 
 /**

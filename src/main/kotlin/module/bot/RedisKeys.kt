@@ -1,5 +1,6 @@
 package module.bot
 
 object RedisKeys {
-    val userChatKeys = "user:chat:lang"
+    const val userChatKeys = "user:chat:lang"
+    const val newPack = "user:chat:pack"
 }

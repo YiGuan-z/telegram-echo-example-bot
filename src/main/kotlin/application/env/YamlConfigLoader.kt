@@ -3,7 +3,6 @@ package application.env
 import envOfNullable
 import net.mamoe.yamlkt.*
 import java.io.File
-import java.lang.IllegalArgumentException
 
 
 /**

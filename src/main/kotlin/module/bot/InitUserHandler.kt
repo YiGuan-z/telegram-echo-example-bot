@@ -4,6 +4,7 @@ import application.BotDispatcher
 import application.Language
 import application.createBotDispatcherModule
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
+import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.dispatcher.text
 import module.bot.modal.ChatLangProfile
 import module.currentChatId
