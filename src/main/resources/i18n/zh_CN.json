@@ -1,4 +1,5 @@
 {
+  "start": "你好，我是一个表情包机器人（暂定）",
   "lang": {
     "lang_choose_prompt": "将要切换的语言为: {lang}",
     "lang_select_msg": "可供选择的列表为{list}",
@@ -8,7 +9,9 @@
     "lang_command_other_error": "语言切换处理器出现错误，详情请检查日志信息",
     "lang_command_user_error": "切换语言失败，请稍后再试",
     "user_prompt": "哎呀，出现错误了，请联系 {user}并描述出现的问题",
-    "err_get_filelink": "获取文件 {fileId} 的地址时出错，跳过..."
+    "err_get_filelink": "获取文件 {fileId} 的地址时出错，跳过...",
+    "convert_error": "转换格式时出错。",
+    "download_error": "下载图片时出错。"
   },
   "newpack": {
     "tasklocked": "你当前正有一个运行中的任务，请稍候直到该任务完成。",
@@ -21,5 +24,15 @@
     "converting": "[2/4] 转换图片中...",
     "packaging": "[3/4] 打包所有文件...",
     "sending": "[4/4] 正在发送zip压缩包，这可能需要一点时间——休息，休息一下！"
+  },
+  "sticker": {
+    "duplicated_sticker": "你向我发过这个表情啦o(￣▽￣)o",
+    "saved": "表情保存啦！你当前建立的收集队列还剩余有 {remain} 张表情可以添加。向我发送更多表情来继续，或者使用 /finish 来得到你的收集队列。发送任意文本获取帮助信息。",
+    "taskfull": "你的收集队列满了！请用 /finish 命令来结束该任务以开始下一个收集队列。发送任意文本获取帮助信息。",
+    "unsupported_sticker_source": "{source} 不是受支持的贴纸来源。支持的贴图来源请参考 /sources 命令。",
+    "get_set_info": "获取表情包信息中，请稍等...",
+    "set_added_count": "已从表情包添加 {sticker_count} 个表情。",
+    "invalid_set": "获取表情包 {setName} 信息时出错。",
+    "direct_task_started": "处理贴纸中... \n\n  Tip: 尝试 /newpack 以：\n    - 导出多张贴纸\n    - 导出整个贴纸包"
   }
 }

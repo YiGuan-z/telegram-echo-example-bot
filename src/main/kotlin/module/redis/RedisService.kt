@@ -30,6 +30,10 @@ class RedisService(val client: RedisAsyncCommands<String, Any>, val objMapper: O
         return res == "OK"
     }
 
+    suspend fun remove(path:String){
+        client.del(path).await()
+    }
+
     suspend fun <T : Any> setEntry(redisEntry: RedisEntry<T>) {
         if (redisEntry.exprTime == -1L) {
             client.set(redisEntry.key, redisEntry.value).await()

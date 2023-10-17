@@ -8,7 +8,9 @@ import com.github.kotlintelegrambot.dispatcher.handlers.CommandHandlerEnvironmen
 import com.github.kotlintelegrambot.entities.ChatId
 import kotlinx.coroutines.*
 import module.bot.modal.ChatLangProfile
+import module.bot.modal.Fpath
 import module.currentChatId
+import module.opencv.OpenCVService
 import module.redis.RedisService
 import module.redis.currentChatLangProfile
 import module.thisLogger
@@ -18,8 +20,9 @@ import java.nio.file.StandardOpenOption
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.io.path.Path
-import kotlin.io.path.createDirectories
+import kotlin.io.path.name
 
 /**
  *
@@ -105,7 +108,7 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                     return@command
                 }
             } catch (ignore: Exception) {
-                bot.sendMessage(chatId, languagePack.getString("error.user_prompt"))
+                bot.sendMessage(chatId, languagePack.getString("error.user_prompt","user", GlobalResource.adminName))
                 logger.error("[finish command] get a error chat id is ${chatId.id} and error is", ignore)
                 return@command
             }
@@ -127,15 +130,12 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
         logger.info("[Pack Task] chatId ${chatId.id} Starting pack task...")
         redisService.setCurrentPack(chatId, collectPack)
         val packPath = "${GlobalResource.imageStorage}/${chatId.id}"
-        val fpath = mutableMapOf(
-            "packpath" to packPath,
-            "srcpath" to "${packPath}/src/",
-            "imgpath" to "${packPath}/img/",
+
+        val fpath = Fpath(
+            packPath,
         )
 
-        Paths.get(fpath["packpath"]!!).toAbsolutePath().createDirectories()
-        Paths.get(fpath["srcpath"]!!).toAbsolutePath().createDirectories()
-        Paths.get(fpath["imgpath"]!!).toAbsolutePath().createDirectories()
+        fpath.mkdirFinder()
 
         coroutineScope {
             withContext(Dispatchers.IO) {
@@ -154,6 +154,7 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                     job2.await()
                     //📦打包贴纸
                     bot.sendMessage(chatId, langPack.getString("downloadstep.packaging"))
+                    //TODO zip
                 }
                 job3.await()
             }
@@ -165,12 +166,12 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
     }
 
     private suspend fun CommandHandlerEnvironment.downloadHandler(
-        fpath: Map<String, String>,
+        fpath: Fpath,
         stickerCollectPack: StickerCollectPack,
         langPack: LanguagePack
     ) {
         val chatId = currentChatId()
-        logger.info("[finish command] Downloading files...")
+        logger.info("[finish command] chat ${chatId.id} Downloading files...")
         coroutineScope {
             val deferredPaths = async {
                 //获取文件路径
@@ -180,8 +181,8 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                 withContext(Dispatchers.IO) {
                     val paths = deferredPaths.await()
                     for (path in paths) {
-                        val srcPath = fpath["srcpath"]!!
-                        val destFile = "$srcPath${Paths.get(path)}"
+                        val srcPath = fpath.srcPath
+                        val destFile = "$srcPath${Paths.get(path).basename()}"
                         download(path, destFile)
                     }
                 }
@@ -193,27 +194,30 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
      * 返回文件链接
      */
     private suspend fun CommandHandlerEnvironment.resolveFile(
-        fileIds: List<String>,
+        fileIds: Set<String>,
         inreplyTo: Long?,
         langPack: LanguagePack
     ): Array<String>/*file path url*/ {
+        //不要在意这是胶水代码，谁让这一堆Environment都没有什么继承关系呢。
         val paths: Array<String> = Array(fileIds.size) { "" }
         var pathsOffset = 0
         val chatId = currentChatId()
         var fid = ""
-        try {
-            for (fileId in fileIds) {
-                fid = fileId
-                val (file, e) = bot.getFile(fileId)
-                if (e != null) throw e
-                val result = file!!.body()!!.result!!
-                val path = result.filePath!!
-                paths[pathsOffset++] = path
+        return withContext(Dispatchers.IO) {
+            try {
+                for (fileId in fileIds) {
+                    fid = fileId
+                    val (file, e) = bot.getFile(fileId)
+                    if (e != null) throw e
+                    val result = file!!.body()!!.result!!
+                    val path = result.filePath!!
+                    paths[pathsOffset++] = path
+                }
+                paths
+            } catch (ignore: RuntimeException) {
+                bot.sendMessage(chatId, langPack.getString("error.err_get_filelink"), replyToMessageId = inreplyTo)
+                throw DownloadFileException("[finish command] get file link for $fid failed")
             }
-            return paths
-        } catch (ignore: RuntimeException) {
-            bot.sendMessage(chatId, langPack.getString("error.err_get_filelink"), replyToMessageId = inreplyTo)
-            throw DownloadFileException("[finish command] get file link for $fid failed")
         }
     }
 
@@ -245,9 +249,9 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
             val collectPack = redisService.getCurrentPack(chatId)!!
             val srcImg = collectPack.srcImg
             val list = if (srcImg.isEmpty()) {
-                listOf(newDest)
+                setOf(newDest)
             } else {
-                srcImg.toMutableList().apply { add(newDest) }
+                srcImg.toMutableSet().apply { add(newDest) }
             }
             redisService.setCurrentPack(chatId, collectPack.copy(srcImg = list))
 
@@ -261,11 +265,59 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
     }
 
     private suspend fun CommandHandlerEnvironment.convertHandler(
-        fpath: Map<String, String>,
+        fpath: Fpath,
         format: String?,
         width: String?,
     ) {
-        TODO()
+        val width = width?.toDouble()
+        val chatId = currentChatId()
+        logger.info("[finish command] chat ${chatId.id} Converting images...")
+        val collectPack = redisService.getCurrentPack(chatId)
+        val srcImg = collectPack!!.srcImg
+        val destImg = ConcurrentLinkedQueue<String>()
+        coroutineScope {
+            withContext(Dispatchers.IO) {
+                srcImg.forEach { srcPath ->
+                    launch {
+                        val destPath = convert(
+                            srcPath,
+                            fpath,
+                            format ?: "jpg",
+                            width ?: 400.0
+                        )
+                        destImg.add(destPath)
+                    }
+                }
+            }
+        }
+        val list = destImg.toSet()
+        redisService.setCurrentPack(chatId, collectPack.copy(destImg = list))
+        logger.info("[finish command] chat ${chatId.id} Converting images end")
+    }
+
+    //用于图像转换
+    private suspend fun CommandHandlerEnvironment.convert(
+        srcPath: String,
+        fpath: Fpath,
+        format: String,
+        width: Double
+    ): String {
+        val chatId = currentChatId()
+        val imgpath = fpath.imgPath
+        val fileName = Path(srcPath).fileName.name.let {
+            if (it.lastIndexOf('.') != -1) {
+                it.substring(0, it.lastIndexOf('.') + 1)
+            } else {
+                it
+            }
+        }
+        //构建新文件路径和文件扩展名
+        val newImgPath = "$imgpath$fileName$format"
+        withContext(Dispatchers.IO) {
+            OpenCVService.conversionImageFile(srcPath, newImgPath, width, width, 0.5)
+        }
+        logger.info("[finish command] chat ${chatId.id} ConversionImage save to $newImgPath")
+        return newImgPath
     }
 
     override val dispatcherName: String = "为用户创建一个贴纸收集包"
@@ -274,20 +326,23 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
 
 class DownloadFileException(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
 
-private suspend fun RedisService.getCurrentPack(id: ChatId.Id): StickerCollectPack? {
+suspend fun RedisService.getCurrentPack(id: ChatId.Id): StickerCollectPack? {
     return get("${RedisKeys.newPack}:${id.id}")
 }
 
-private suspend fun RedisService.setCurrentPack(id: ChatId.Id, pack: StickerCollectPack) {
+suspend fun RedisService.setCurrentPack(id: ChatId.Id, pack: StickerCollectPack) {
     set("${RedisKeys.newPack}:${id.id}", pack)
 }
 
-//先这样吧，js里面看不出这些是个什么类型，一步一步慢慢来。
+suspend fun RedisService.removeCurrentPack(id: ChatId.Id) {
+    remove("${RedisKeys.newPack}:${id.id}")
+}
+
 data class StickerCollectPack @JvmOverloads constructor(
     val start: Long = -1,
-    val files: List<String> = emptyList(),
-    val srcImg: List<String> = emptyList(),
-    val destImg: List<String> = emptyList(),
+    val files: Set<String> = emptySet(),
+    val srcImg: Set<String> = emptySet(),
+    val destImg: Set<String> = emptySet(),
     val isLocked: Boolean = false,
 )
 

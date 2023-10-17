@@ -135,6 +135,9 @@ class Application(applicationConfig: ApplicationConfig) {
             appEnvironment.property("bot.images.max_images").getStringOrNull()?.let {
                 GlobalResource.maxImages = it.toInt()
             }
+            appEnvironment.property("bot.images.sticker_sources").getListOrNull()?.let {
+                GlobalResource.stickerSources = it
+            }
         }
 
         private val init: suspend Application.() -> Unit = {

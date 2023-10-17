@@ -1,6 +1,7 @@
 object GlobalResource {
-    var imageStorage: String = "./storage"
-    var defaultLang = "zh_CN"
-    var adminName: String = ""
-    var maxImages:Int = 50
+    var imageStorage: String by setOnce()
+    var defaultLang: String by setOnce()
+    var adminName: String by setOnce()
+    var maxImages: Int by setOnce()
+    var stickerSources: List<String> by setOnce()
 }

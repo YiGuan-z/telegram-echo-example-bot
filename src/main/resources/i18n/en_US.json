@@ -1,4 +1,5 @@
 {
+  "start": "Hello, I'm an emoji robot (tentative)",
   "lang": {
     "lang_choose_prompt": "The language to be switched is: {lang}",
     "lang_select_msg": "The list to choose from is:{list}",
@@ -8,7 +9,9 @@
     "lang_command_other_error": "There is an error in the language switching processor. Please check the log information for details.",
     "lang_command_user_error": "The language switching failed, please try again later.",
     "user_prompt": "Oops, there was an error, please contact {user} and describe the problem.",
-    "err_get_filelink": "There was an error in getting the address of the file {fileId}, skip..."
+    "err_get_filelink": "There was an error in getting the address of the file {fileId}, skip...",
+    "convert_error": "Error when converting the format。",
+    "download_error": "There was an error downloading the picture."
   },
   "newpack": {
     "tasklocked": "You currently have a running task. Please wait until the task is completed.",
@@ -21,5 +24,15 @@
     "converting": "[2/4] Convert the picture...",
     "packaging": "[3/4] Pack all files...",
     "sending": "[4/4] Sending a zip package, which may take a little time - rest, take a break!"
+  },
+  "sticker": {
+    "duplicated_sticker": "You sent me that look. o(￣▽￣)o",
+    "saved": "Save the expression! There are {remain} emoticons left in your current collection queue to add. Send me more emoticons to continue, or use finish to get your collection queue. Send any text to get help.",
+    "taskfull": "Your collection queue is full! Use the finish command to end the task to start the next collection queue. Send any text to get help.",
+    "unsupported_sticker_source": "{source} is not a supported sticker source. Please refer to the sources command for supported map sources.",
+    "get_set_info": "While getting the meme information, please wait a moment.",
+    "set_added_count": "{sticker_count} emoticons have been added from emojis.",
+    "invalid_set": "An error occurred while getting the message of the emoji {setName}.",
+    "direct_task_started": "Dealing with stickers... \n\n Tip: Try newpack to: \n\n - Export multiple stickers \n\n - Export the entire sticker package"
   }
 }

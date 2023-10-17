@@ -1,6 +1,9 @@
+
 plugins {
-    kotlin("jvm") version "1.9.0"
+    kotlin("jvm") version "1.9.10"
     application
+//    `java-library`
+//    id("org.bytedeco.gradle-javacpp-platform").version("1.5.9")
 }
 
 group = "com.github.cheng.bot"
@@ -9,19 +12,16 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
     maven { url = uri("https://jitpack.io") }
+    maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
 }
-val ktor_version:String by project
+val ktor_version: String by project
+val retrofit_version: String by project
 
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.7.1")
-//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.3.9")
-//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.3.9")
-//    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.0.2.RELEASE")
-//    implementation("io.projectreactor.addons:reactor-extra:3.3.0.RELEASE")
-//    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.0.2.RELEASE")
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core
     implementation("com.fasterxml.jackson.core:jackson-core:2.15.2")
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
@@ -35,18 +35,17 @@ dependencies {
     //implementation("io.coil-kt:coil:2.4.0")
     //https://github.com/bytedeco/javacv
     //coil is android library, but running on the server
-    implementation("org.bytedeco:javacv-platform:1.5.9")
+//    implementation("org.bytedeco:javacv-platform:1.5.9")
+
+    //https://github.com/bytedeco/javacv/issues/2087 upgrade opencv 480
+    implementation("org.bytedeco:javacv-platform:1.5.10-SNAPSHOT")
     //https://github.com/Him188/yamlkt
     implementation("net.mamoe.yamlkt:yamlkt:0.13.0")
-    //request
-    //https://ktor.io/docs/getting-started-ktor-client.html#add-dependencies
-    implementation("io.ktor:ktor-client-core:$ktor_version")
-    implementation("io.ktor:ktor-client-cio:$ktor_version")
-
 
     implementation("io.lettuce:lettuce-core:6.2.6.RELEASE")
     implementation("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.1.0")
-    implementation("io.ktor:ktor-client-cio-jvm:2.3.5")
+    compileOnly("com.squareup.retrofit2:retrofit:$retrofit_version")
+    compileOnly("com.squareup.retrofit2:converter-gson:$retrofit_version")
     testImplementation(kotlin("test"))
 }
 

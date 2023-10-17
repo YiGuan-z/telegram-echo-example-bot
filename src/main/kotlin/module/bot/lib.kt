@@ -1,5 +1,8 @@
 package module.bot
 
+import java.nio.file.Path
+import kotlin.io.path.name
+
 /**
  *
  * @author caseycheng
@@ -21,3 +24,5 @@ fun List<String>.resolveArgs(): Map<String, String> {
     }
     return result
 }
+
+fun Path.basename() = this.fileName.name

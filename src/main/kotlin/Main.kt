@@ -1,20 +1,19 @@
 import application.Application
-import application.Language
 import application.getJsonFiles
 import application.i18n
 import com.fasterxml.jackson.databind.DeserializationFeature
 import module.bot.*
 import module.jackson
+import module.opencv.OpenCVService
 import module.redis.RedisFactory
 import module.redis.RedisService
 import module.redis.jacksonRedisCodec
 import module.redis.redisFactory
-import module.request.httpClient
 
 suspend fun main(args: Array<String>) = Application.main(args, Application::configModule)
 
 fun Application.configModule() {
-    install(httpClient)
+    OpenCVService.init()
 
     install(jackson){
         jacksonConfig {
@@ -56,6 +55,11 @@ fun Application.configurationBotModule(){
 
     install(newPackCommand){
         setI18n(instance(i18n))
+        setRedisService(redisService)
+    }
+
+    install(messageHandler){
+        setI18nPacks(instance(i18n))
         setRedisService(redisService)
     }
 }
