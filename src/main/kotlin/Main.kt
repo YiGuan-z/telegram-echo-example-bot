@@ -38,9 +38,9 @@ fun Application.configurationBotModule(){
     val redisAsyncClient = RedisFactory.newAsyncClient(instance(jacksonRedisCodec))
     val redisService = RedisService(redisAsyncClient, instance(jackson))
 
-    install(echoChatHandler) {
-        setRedisService(redisService)
-    }
+//    install(echoChatHandler) {
+//        setRedisService(redisService)
+//    }
 
     install(initUserHandler) {
         setRedisService(redisService)

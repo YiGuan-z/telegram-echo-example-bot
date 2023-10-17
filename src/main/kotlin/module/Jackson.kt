@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
  **/
 
 val jackson = createAppPlugin("jackson", ::ObjectMapperConfig) { config ->
-    return@createAppPlugin ObjectMapper().apply<ObjectMapper> { config.objSetting?.invoke(this) }
+    return@createAppPlugin ObjectMapper().apply<ObjectMapper> { config.objSetting?.invoke(this) }.apply { logger().info("jackson is ready") }
 }
 
 typealias objSetting = ObjectMapper.() -> Unit

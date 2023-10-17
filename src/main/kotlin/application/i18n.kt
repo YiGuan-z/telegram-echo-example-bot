@@ -1,8 +1,15 @@
 package application
 
+import module.bot.currentPath
 import module.jackson
 import java.io.File
-import javax.annotation.processing.SupportedAnnotationTypes
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.zip.ZipInputStream
+import kotlin.io.path.Path
+import kotlin.io.path.createDirectories
+import kotlin.io.path.createTempDirectory
+import kotlin.io.path.isDirectory
 
 /**
  *
@@ -66,7 +73,7 @@ internal class I18nPacksImpl(private val function: GenerateLanguages) : I18nPack
         val checkStorage: MutableMap<String, Int> = mutableMapOf()
         root.firstNotNullOf { (_, data) ->
             @Suppress("unchecked_cast")
-            data as Map<String,Any>
+            data as Map<String, Any>
             data.forEach { (key, value) ->
                 if (value is Map<*, *>) {
                     checkStorage[key] = value.size
@@ -78,7 +85,7 @@ internal class I18nPacksImpl(private val function: GenerateLanguages) : I18nPack
         }
         root.forEach { (lang, data) ->
             @Suppress("unchecked_cast")
-            data as Map<String,Any>
+            data as Map<String, Any>
             if (lang.isBlank()) {
                 throw I18nBuildException("language can not be blank")
             }
@@ -94,7 +101,7 @@ internal class I18nPacksImpl(private val function: GenerateLanguages) : I18nPack
                         //Map
                         @Suppress("unchecked_cast")
                         val obj = value as? Map<String, String> ?: throw I18nBuildException("value must be a object")
-                        if (it !=obj.size){
+                        if (it != obj.size) {
                             throw I18nBuildException("i18n json files must be the same size")
                         }
                     }
@@ -165,7 +172,6 @@ class I18nPacksBuildScope {
     }
 
 
-
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -194,8 +200,19 @@ private fun combine(root: String, relative: String): String = if (root.isEmpty()
 
 fun Application.getJsonFiles(): Map<Language, Map<String, Any>> {
     val mapper = installAndInstance(jackson)
-    val url = Thread.currentThread().contextClassLoader.getResource("i18n")?.toURI()
-    val files = File(url ?: throw RuntimeException("i18n folder not found"))
+//    val url = Thread.currentThread().contextClassLoader.getResource("i18n")?.toURI()
+//    logger.info("[i18n] geturl:{}", url)
+//    val files = File(url ?: throw RuntimeException("i18n folder not found"))
+    val tempDir = Path(currentPath() + "/temp")
+    val files: File =
+        if (tempDir.isDirectory()) {
+            //存在就获取文件
+            tempDir.toFile().listFiles()!![0]
+        } else {
+            logger.info("entry")
+            //不存在就解压文件
+            getI18nFile()
+        }
     if (!files.exists()) {
         throw RuntimeException("i18n folder not found")
     }
@@ -211,5 +228,32 @@ fun Application.getJsonFiles(): Map<Language, Map<String, Any>> {
         val data = map as? Map<String, Any> ?: throw IllegalArgumentException("json file is not valid")
         Language.of(language) to data
     }
+    files.deleteOnExit()
     return languages
+}
+
+private fun Application.getI18nFile(): File {
+    val i18nInputStream = Thread.currentThread().contextClassLoader.getResourceAsStream("i18n.zip")
+        ?: throw RuntimeException("need i18n files")
+    val zipInputStream = ZipInputStream(i18nInputStream)
+    val tempDirectory = createTempDirectory(createTempDir("/temp"), "i18n_temp")
+    zipInputStream.use { zip ->
+        generateSequence { zip.nextEntry }.forEach { entry ->
+            val outputFile = tempDirectory.resolve(entry.name)
+            if (entry.isDirectory) {
+                Files.createDirectories(outputFile)
+            } else {
+                Files.createDirectories(outputFile.parent)
+                Files.newOutputStream(outputFile).use { out ->
+                    zip.copyTo(out)
+                }
+            }
+        }
+    }
+    return tempDirectory.toFile()
+}
+
+fun createTempDir(name: String): Path {
+    val path = Path(currentPath() + name).createDirectories()
+    return path
 }

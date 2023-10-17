@@ -24,6 +24,7 @@ import kotlin.io.path.pathString
 object OpenCVService {
     fun init() {
         Loader.load(opencv_java::class.java)
+        logger.info("opencv is ready")
     }
 
     private val logger = thisLogger<OpenCVService>()
