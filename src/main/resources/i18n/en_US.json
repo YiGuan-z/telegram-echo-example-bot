@@ -30,6 +30,7 @@
     "saved": "Save the expression! There are {remain} emoticons left in your current collection queue to add. Send me more emoticons to continue, or use finish to get your collection queue. Send any text to get help.",
     "taskfull": "Your collection queue is full! Use the finish command to end the task to start the next collection queue. Send any text to get help.",
     "unsupported_sticker_source": "{source} is not a supported sticker source. Please refer to the sources command for supported map sources.",
+    "no_support": "does not support conversion and is about to be skipped.",
     "get_set_info": "While getting the meme information, please wait a moment.",
     "set_added_count": "{sticker_count} emoticons have been added from emojis.",
     "invalid_set": "An error occurred while getting the message of the emoji {setName}.",

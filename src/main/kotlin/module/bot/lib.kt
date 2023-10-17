@@ -1,7 +1,11 @@
 package module.bot
 
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import kotlin.io.path.Path
 import kotlin.io.path.name
+import kotlin.io.path.pathString
 
 /**
  *
@@ -26,3 +30,13 @@ fun List<String>.resolveArgs(): Map<String, String> {
 }
 
 fun Path.basename() = this.fileName.name
+
+fun String.suffix() = this.drop(this.lastIndexOf('.') + 1)
+
+fun copyFile(sourceFile: Path, destFile: Path) {
+    Files.createDirectories(destFile.parent)
+
+    Files.copy(sourceFile, destFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+}
+
+fun currentPath() = Path("").toAbsolutePath().pathString

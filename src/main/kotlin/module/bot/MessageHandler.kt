@@ -3,6 +3,7 @@ package module.bot
 import GlobalResource
 import application.*
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
+import com.github.kotlintelegrambot.dispatcher.handlers.CommandHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
@@ -19,7 +20,9 @@ import module.redis.currentChatLangProfile
 import module.thisLogger
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
+import kotlin.io.path.deleteRecursively
 import kotlin.io.path.name
 
 /**
@@ -193,18 +196,30 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                         }
                     }
                     //转换
-                    val job1 = async(Dispatchers.IO) {
-                        val destPath = job0.await()
-                        try {
-                            return@async convert(destPath, fpath, "png", 400.0)
-                        } catch (e: Exception) {
-                            logger.error("[Message Handler] chat ${chatId.id} convert error")
-                            bot.sendMessage(chatId, languagePack.getString("error.convert_error"))
-                            throw RuntimeException()
-                        }
-                    }
+                    //俺寻思 webp可以不用转换
+                    //TODO 先不转换，等我学习一下wbem怎么转换为gif
+//                    val job1 = async(Dispatchers.IO) {
+//                        val destPath = job0.await()
+//                        try {
+//                            if (destPath.lastIndexOf('.') != -1) {
+//                                val suffix = destPath.suffix()
+//                                val srcFile = Path(destPath)
+//                                val destPath = fpath.imgPath + srcFile.basename()
+//                                when (suffix) {
+//                                    "webp" -> copyFile(srcFile, Path(destPath))
+//                                    else -> throw RuntimeException()
+//                                }
+//                                return@async destPath
+//                            }
+//                            return@async convert(destPath, fpath, "webp", 512.0)
+//                        } catch (e: Exception) {
+//                            logger.error("[Message Handler] chat ${chatId.id} convert error")
+//                            bot.sendMessage(chatId, languagePack.getString("error.convert_error"))
+//                            throw RuntimeException()
+//                        }
+//                    }
                     launch(Dispatchers.IO) {
-                        val photo = job1.await()
+                        val photo = job0.await()
                         bot.sendDocument(
                             chatId,
                             document = TelegramFile.ByFile(Path(photo).toFile()),
@@ -291,16 +306,19 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
         //构建新文件路径和文件扩展名
         val newImgPath = "$imgpath$fileName$format"
         withContext(Dispatchers.IO) {
-            OpenCVService.conversionImageFile(srcPath, newImgPath, width, width, 0.5)
+            OpenCVService.conversionImageFile(srcPath.drop(2), newImgPath.drop(2), width, width, 1.0)
         }
         logger.info("[finish command] chat ${chatId.id} ConversionImage save to $newImgPath")
         return newImgPath
     }
 
+    @OptIn(ExperimentalPathApi::class)
     private suspend fun MessageHandlerEnvironment.cleanup(chat: ChatId.Id) {
+        logger.info("[Message Handle] chat ${chat.id} file Cleanup")
         withContext(Dispatchers.IO) {
             redisService.removeCurrentPack(chat)
-            Files.deleteIfExists(Path("${GlobalResource.imageStorage}/${chat.id}"))
+            val path = Path("${currentPath()}${GlobalResource.imageStorage.drop(1)}/${chat.id}")
+            path.deleteRecursively()
         }
     }
 

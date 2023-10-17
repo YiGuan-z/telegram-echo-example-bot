@@ -5,7 +5,9 @@ import application.*
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.handlers.CommandHandlerEnvironment
+import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.entities.ChatId
+import com.github.kotlintelegrambot.entities.TelegramFile
 import kotlinx.coroutines.*
 import module.bot.modal.ChatLangProfile
 import module.bot.modal.Fpath
@@ -14,6 +16,7 @@ import module.opencv.OpenCVService
 import module.redis.RedisService
 import module.redis.currentChatLangProfile
 import module.thisLogger
+import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
@@ -21,8 +24,9 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.concurrent.ConcurrentLinkedQueue
-import kotlin.io.path.Path
-import kotlin.io.path.name
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import kotlin.io.path.*
 
 /**
  *
@@ -108,7 +112,7 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                     return@command
                 }
             } catch (ignore: Exception) {
-                bot.sendMessage(chatId, languagePack.getString("error.user_prompt","user", GlobalResource.adminName))
+                bot.sendMessage(chatId, languagePack.getString("error.user_prompt", "user", GlobalResource.adminName))
                 logger.error("[finish command] get a error chat id is ${chatId.id} and error is", ignore)
                 return@command
             }
@@ -148,20 +152,26 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                     job1.await()
                     //转换为对应格式
                     bot.sendMessage(chatId, langPack.getString("downloadstep.converting"))
-                    convertHandler(fpath, format, width)
+                    convertHandler(fpath, format, width, langPack)
                 }
                 val job3 = async {
                     job2.await()
                     //📦打包贴纸
                     bot.sendMessage(chatId, langPack.getString("downloadstep.packaging"))
-                    //TODO zip
+                    zipHandler()
                 }
-                job3.await()
+                val zipFile = job3.await()
+                //发送贴纸
+                bot.sendMessage(chatId, langPack.getString("downloadstep.sending"))
+                logger.info("[finish command] chat ${chatId.id} sending zip file...")
+                bot.sendDocument(
+                    chatId = chatId,
+                    document = TelegramFile.ByFile(Path(zipFile).toFile()),
+                )
+                logger.info("[finish command] chat ${chatId.id} sending zip file...done")
+                cleanup(chatId)
             }
         }
-        //发送贴纸
-        bot.sendMessage(chatId, langPack.getString("msg.send"))
-
 
     }
 
@@ -268,6 +278,7 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
         fpath: Fpath,
         format: String?,
         width: String?,
+        langPack: LanguagePack,
     ) {
         val width = width?.toDouble()
         val chatId = currentChatId()
@@ -279,13 +290,28 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
             withContext(Dispatchers.IO) {
                 srcImg.forEach { srcPath ->
                     launch {
-                        val destPath = convert(
-                            srcPath,
-                            fpath,
-                            format ?: "jpg",
-                            width ?: 400.0
-                        )
-                        destImg.add(destPath)
+                        try {
+                            if (srcPath.lastIndexOf('.') != -1) {
+                                val suffix = srcPath.suffix()
+                                val srcPath = Path(srcPath)
+                                val destPath = fpath.imgPath + srcPath.basename()
+                                when (suffix) {
+                                    "webp" -> copyFile(srcPath, Path(destPath))
+                                    else -> throw RuntimeException()
+                                }
+                                destImg.add(destPath)
+                                return@launch
+                            }
+                            convert(
+                                srcPath,
+                                fpath,
+                                format ?: "webp",
+                                width ?: 512.0
+                            ).run { destImg.add(this) }
+                        } catch (ignore: RuntimeException) {
+                            logger.error("[finish command] chat ${chatId.id} Converting images error", ignore)
+                            bot.sendMessage(chatId, langPack.getString("sticker.no_support"))
+                        }
                     }
                 }
             }
@@ -314,10 +340,56 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
         //构建新文件路径和文件扩展名
         val newImgPath = "$imgpath$fileName$format"
         withContext(Dispatchers.IO) {
-            OpenCVService.conversionImageFile(srcPath, newImgPath, width, width, 0.5)
+            OpenCVService.conversionImageFile(srcPath.drop(2), newImgPath.drop(2), width, width, 1.0)
         }
         logger.info("[finish command] chat ${chatId.id} ConversionImage save to $newImgPath")
         return newImgPath
+    }
+
+    //将文件压缩为zip
+    private suspend fun CommandHandlerEnvironment.zipHandler(): String {
+        val chatId = currentChatId()
+        logger.info("[finish command] chat ${chatId.id} Adding files to zip file...")
+        //待压缩
+        val zipPath = "${Path("").toAbsolutePath().pathString}${GlobalResource.imageStorage.drop(1)}/${chatId.id}"
+        val fpath = Fpath(zipPath)
+        val collectPack = redisService.getCurrentPack(chatId)!!
+        return withContext(Dispatchers.IO) {
+            val zipEntryPath = "${fpath.packPath}/${chatId.id}.zip"
+            collectPack.destImg.let { destimgs ->
+                if (destimgs.isEmpty()) throw RuntimeException()
+                val files = destimgs.map { dest ->
+                    val path = currentPath() + dest.drop(1)
+                    logger.info("[finish command] chat ${chatId.id} Adding file $path to zip file...")
+                    Path(path).toFile()
+                }
+                val zipOutputStream =
+                    ZipOutputStream(FileOutputStream(Path(zipEntryPath).toFile()))
+                zipOutputStream.use {
+                    it.setComment("create by github.com/YiGuan-z/telegram-image-collect-bot")
+                    it.setLevel(5)
+                    files.forEach { file ->
+                        file.inputStream().use { input ->
+                            zipOutputStream.putNextEntry(ZipEntry(file.name))
+                            input.copyTo(zipOutputStream)
+                            zipOutputStream.closeEntry()
+                        }
+                    }
+                    it.finish()
+                }
+            }
+            zipEntryPath
+        }
+    }
+
+    @OptIn(ExperimentalPathApi::class)
+    private suspend fun CommandHandlerEnvironment.cleanup(chat: ChatId.Id) {
+        logger.info("[finish command] chat ${chat.id} file Cleanup")
+        withContext(Dispatchers.IO) {
+            redisService.removeCurrentPack(chat)
+            val path = Path("${currentPath()}${GlobalResource.imageStorage.drop(1)}/${chat.id}")
+            path.deleteRecursively()
+        }
     }
 
     override val dispatcherName: String = "为用户创建一个贴纸收集包"

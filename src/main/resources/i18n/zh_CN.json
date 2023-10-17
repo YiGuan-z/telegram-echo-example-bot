@@ -30,6 +30,7 @@
     "saved": "表情保存啦！你当前建立的收集队列还剩余有 {remain} 张表情可以添加。向我发送更多表情来继续，或者使用 /finish 来得到你的收集队列。发送任意文本获取帮助信息。",
     "taskfull": "你的收集队列满了！请用 /finish 命令来结束该任务以开始下一个收集队列。发送任意文本获取帮助信息。",
     "unsupported_sticker_source": "{source} 不是受支持的贴纸来源。支持的贴图来源请参考 /sources 命令。",
+    "no_support": "不支持转换的图片，即将跳过。",
     "get_set_info": "获取表情包信息中，请稍等...",
     "set_added_count": "已从表情包添加 {sticker_count} 个表情。",
     "invalid_set": "获取表情包 {setName} 信息时出错。",
