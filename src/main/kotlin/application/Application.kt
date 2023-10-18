@@ -8,6 +8,7 @@ import com.github.kotlintelegrambot.logging.LogLevel
 import kotlinx.coroutines.coroutineScope
 import module.bot.bot
 import module.mkdirImageFinder
+import module.shutdown
 import module.thisLogger
 import org.slf4j.Logger
 
@@ -117,9 +118,15 @@ class Application(applicationConfig: ApplicationConfig) {
                     .apply { init() }
                     .apply { block() }
                     .apply(configBot)
+                    .apply(initShutdown)
             }
             application.instance(bot).startPolling()
                 .also { thisLogger<Application>().info("机器人已启动") }
+        }
+
+        private val initShutdown: Application.() -> Unit = {
+            install(shutdown)
+                .plan()
         }
 
         private val configurationGlobalResource: Application.() -> Unit = {

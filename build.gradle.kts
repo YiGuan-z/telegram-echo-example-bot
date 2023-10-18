@@ -1,9 +1,6 @@
-
 plugins {
     kotlin("jvm") version "1.9.10"
     application
-//    `java-library`
-//    id("org.bytedeco.gradle-javacpp-platform").version("1.5.9")
 }
 
 group = "com.github.cheng.bot"
@@ -39,6 +36,8 @@ dependencies {
 
     //https://github.com/bytedeco/javacv/issues/2087 upgrade opencv 480
     implementation("org.bytedeco:javacv-platform:1.5.10-SNAPSHOT")
+
+//    implementation("com.groupdocs:groupdocs-conversion:23.10")
     //https://github.com/Him188/yamlkt
     implementation("net.mamoe.yamlkt:yamlkt:0.13.0")
 

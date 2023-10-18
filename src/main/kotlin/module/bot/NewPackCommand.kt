@@ -5,7 +5,6 @@ import application.*
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.handlers.CommandHandlerEnvironment
-import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.TelegramFile
 import kotlinx.coroutines.*
@@ -164,12 +163,19 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                 //发送贴纸
                 bot.sendMessage(chatId, langPack.getString("downloadstep.sending"))
                 logger.info("[finish command] chat ${chatId.id} sending zip file...")
-                bot.sendDocument(
-                    chatId = chatId,
-                    document = TelegramFile.ByFile(Path(zipFile).toFile()),
-                )
-                logger.info("[finish command] chat ${chatId.id} sending zip file...done")
-                cleanup(chatId)
+                Path(zipFile).toFile().let {
+                    if (it.isFile) {
+                        bot.sendDocument(
+                            chatId = chatId,
+                            document = TelegramFile.ByFile(it),
+                        )
+                        logger.info("[finish command] chat ${chatId.id} sending zip file...done")
+                    } else {
+                        bot.sendMessage(chatId, langPack.getString("oops"))
+                    }
+                }
+
+//                cleanup(chatId)
             }
         }
 
@@ -295,11 +301,22 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                                 val suffix = srcPath.suffix()
                                 val srcPath = Path(srcPath)
                                 val destPath = fpath.imgPath + srcPath.basename()
-                                when (suffix) {
-                                    "webp" -> copyFile(srcPath, Path(destPath))
+                                val savePath = when (suffix) {
+                                    "webp" -> {
+                                        copyFile(srcPath, Path(destPath))
+                                        destPath
+                                    }
+
+                                    "webm" -> {
+                                        val destPath = destPath.removeSuffix("webm") + "gif"
+                                        val dest = Path(destPath)
+                                        OpenCVService.videoToGif(srcPath, dest)
+                                        destPath
+                                    }
+
                                     else -> throw RuntimeException()
                                 }
-                                destImg.add(destPath)
+                                destImg.add(savePath)
                                 return@launch
                             }
                             convert(
@@ -359,9 +376,10 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
             collectPack.destImg.let { destimgs ->
                 if (destimgs.isEmpty()) throw RuntimeException()
                 val files = destimgs.map { dest ->
-                    val path = currentPath() + dest.drop(1)
-                    logger.info("[finish command] chat ${chatId.id} Adding file $path to zip file...")
-                    Path(path).toFile()
+//                    val path = currentPath() + dest.drop(1)
+//                    logger.info("[finish command] chat ${chatId.id} Adding file $path to zip file...")
+//                    Path(path).toFile()
+                    Path(dest).toFile()
                 }
                 val zipOutputStream =
                     ZipOutputStream(FileOutputStream(Path(zipEntryPath).toFile()))
@@ -369,10 +387,14 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                     it.setComment("create by github.com/YiGuan-z/telegram-image-collect-bot")
                     it.setLevel(5)
                     files.forEach { file ->
-                        file.inputStream().use { input ->
-                            zipOutputStream.putNextEntry(ZipEntry(file.name))
-                            input.copyTo(zipOutputStream)
-                            zipOutputStream.closeEntry()
+                        try {
+                            file.inputStream().use { input ->
+                                zipOutputStream.putNextEntry(ZipEntry(file.name))
+                                input.copyTo(zipOutputStream)
+                                zipOutputStream.closeEntry()
+                            }
+                        } catch (ignore: Exception) {
+
                         }
                     }
                     it.finish()
