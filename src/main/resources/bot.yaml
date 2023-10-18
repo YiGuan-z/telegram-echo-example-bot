@@ -11,7 +11,7 @@ bot:
     file_storage: ./storage
     # 文件转换路径
     image_convert_path: convert
-    max_images: 50
+    max_images: 1000
     # 贴纸来源
     sticker_sources: [ "https://t.me/addstickers/","https://t.me/addstickers/" ]
   zip:
