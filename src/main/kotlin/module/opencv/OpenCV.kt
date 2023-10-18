@@ -81,8 +81,8 @@ object OpenCVService {
                         frame = grabber.grabImage()
                         frame?.let {
                             try {
-                                (0..<frameSpeed).forEach { recorder.record(frame) }
-                            } catch (e: Exception) {
+                                (0..<frameSpeed).forEach { _ -> recorder.record(frame) }
+                            } catch (_: Exception) {
 
                             }
 

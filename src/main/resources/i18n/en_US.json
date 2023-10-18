@@ -1,5 +1,5 @@
 {
-  "start": "Hello, I'm an emoji robot (tentative)",
+  "start": "Hello, I am a meme robot (tentatively)\nUse newpack to open a queue to which you can send memes. After sending emojis, you can use finish to start the emojis collection task.Use lang [language code] to switch the corresponding language.",
   "lang": {
     "lang_choose_prompt": "The language to be switched is: {lang}",
     "lang_select_msg": "The list to choose from is:{list}",

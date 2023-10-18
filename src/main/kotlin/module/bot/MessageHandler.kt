@@ -3,7 +3,6 @@ package module.bot
 import GlobalResource
 import application.*
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
-import com.github.kotlintelegrambot.dispatcher.handlers.CommandHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
@@ -197,29 +196,37 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                     }
                     //转换
                     //俺寻思 webp可以不用转换
-                    //TODO 先不转换，等我学习一下wbem怎么转换为gif
-//                    val job1 = async(Dispatchers.IO) {
-//                        val destPath = job0.await()
-//                        try {
-//                            if (destPath.lastIndexOf('.') != -1) {
-//                                val suffix = destPath.suffix()
-//                                val srcFile = Path(destPath)
-//                                val destPath = fpath.imgPath + srcFile.basename()
-//                                when (suffix) {
-//                                    "webp" -> copyFile(srcFile, Path(destPath))
-//                                    else -> throw RuntimeException()
-//                                }
-//                                return@async destPath
-//                            }
-//                            return@async convert(destPath, fpath, "webp", 512.0)
-//                        } catch (e: Exception) {
-//                            logger.error("[Message Handler] chat ${chatId.id} convert error")
-//                            bot.sendMessage(chatId, languagePack.getString("error.convert_error"))
-//                            throw RuntimeException()
-//                        }
-//                    }
+                    val job1 = async(Dispatchers.IO) {
+                        val destPath = job0.await()
+                        try {
+                            if (destPath.lastIndexOf('.') != -1) {
+                                val suffix = destPath.suffix()
+                                val srcPath = Path(destPath)
+                                val destPath = fpath.imgPath + srcPath.basename()
+                                val file = when (suffix) {
+                                    "webp" -> {
+                                        copyFile(srcPath, Path(destPath))
+                                        destPath
+                                    }
+                                    "webm" -> {
+                                        val destPath = destPath.removeSuffix("webm") + "gif"
+                                        val dest = Path(destPath)
+                                        OpenCVService.videoToGif(srcPath, dest)
+                                        destPath
+                                    }
+                                    else -> throw RuntimeException()
+                                }
+                                return@async file
+                            }
+                            throw RuntimeException()
+                        } catch (e: Exception) {
+                            logger.error("[Message Handler] chat ${chatId.id} convert error")
+                            bot.sendMessage(chatId, languagePack.getString("error.convert_error"))
+                            throw RuntimeException(e)
+                        }
+                    }
                     launch(Dispatchers.IO) {
-                        val photo = job0.await()
+                        val photo = job1.await()
                         bot.sendDocument(
                             chatId,
                             document = TelegramFile.ByFile(Path(photo).toFile()),
@@ -288,25 +295,24 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
 
     }
 
-    private suspend fun MessageHandlerEnvironment.convert(
+    private suspend fun MessageHandlerEnvironment.videoToGif(
         srcPath: String,
         fpath: Fpath,
-        format: String,
-        width: Double
+        extension: String,
     ): String {
         val chatId = currentChatId()
         val imgpath = fpath.imgPath
         val fileName = Path(srcPath).fileName.name.let {
             if (it.lastIndexOf('.') != -1) {
-                it.substring(0, it.lastIndexOf('.') + 1)
+                it.substring(0, it.lastIndexOf('.'))
             } else {
                 it
             }
         }
         //构建新文件路径和文件扩展名
-        val newImgPath = "$imgpath$fileName$format"
+        val newImgPath = "$imgpath$fileName.$extension"
         withContext(Dispatchers.IO) {
-            OpenCVService.conversionImageFile(srcPath.drop(2), newImgPath.drop(2), width, width, 1.0)
+            OpenCVService.videoToGif(Path(srcPath) , Path(newImgPath) )
         }
         logger.info("[finish command] chat ${chatId.id} ConversionImage save to $newImgPath")
         return newImgPath
