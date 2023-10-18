@@ -14,3 +14,5 @@ bot:
     max_images: 50
     # 贴纸来源
     sticker_sources: [ "https://t.me/addstickers/","https://t.me/addstickers/" ]
+  zip:
+    comment: create by github.com/YiGuan-z/telegram-stickers-collect-bot

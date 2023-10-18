@@ -36,12 +36,14 @@ import kotlin.io.path.*
 val newPackCommand = createBotDispatcherModule("newPackCommand", ::NewPackCommandConfiguration) { config ->
     val redisService = requireNotNull(config.redisService) { "need redisService" }
     val i18n = requireNotNull(config.i18nPacks) { "need i18nPacks" }
-    NewPackCommand(redisService, i18n)
+    val zipCommand = requireNotNull(config.zipCommand) { "need zipCommand" }
+    NewPackCommand(redisService, i18n,zipCommand)
 }
 
 class NewPackCommandConfiguration {
     var redisService: RedisService? = null
     var i18nPacks: I18nPacks? = null
+    var zipCommand: String? = null
 }
 
 @BotDSL
@@ -54,7 +56,7 @@ fun NewPackCommandConfiguration.setI18n(i18nPacks: I18nPacks) {
     this.i18nPacks = i18nPacks
 }
 
-class NewPackCommand(private val redisService: RedisService, private val i18n: I18nPacks) : BotDispatcher {
+class NewPackCommand(private val redisService: RedisService, private val i18n: I18nPacks,private val zipCommand: String) : BotDispatcher {
     private val logger = thisLogger<NewPackCommand>()
     override val dispatch: Dispatcher.() -> Unit = {
         newPackCommand()
@@ -384,7 +386,7 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                 val zipOutputStream =
                     ZipOutputStream(FileOutputStream(Path(zipEntryPath).toFile()))
                 zipOutputStream.use {
-                    it.setComment("create by github.com/YiGuan-z/telegram-image-collect-bot")
+                    it.setComment(zipCommand)
                     it.setLevel(5)
                     files.forEach { file ->
                         try {

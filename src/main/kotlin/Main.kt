@@ -15,9 +15,9 @@ suspend fun main(args: Array<String>) = Application.main(args, Application::conf
 fun Application.configModule() {
     OpenCVService.init()
 
-    install(jackson){
+    install(jackson) {
         jacksonConfig {
-            configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false)
+            configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         }
     }
 
@@ -34,13 +34,9 @@ fun Application.configModule() {
     configurationBotModule()
 }
 
-fun Application.configurationBotModule(){
+fun Application.configurationBotModule() {
     val redisAsyncClient = RedisFactory.newAsyncClient(instance(jacksonRedisCodec))
     val redisService = RedisService(redisAsyncClient, instance(jackson))
-
-//    install(echoChatHandler) {
-//        setRedisService(redisService)
-//    }
 
     install(initUserHandler) {
         setRedisService(redisService)
@@ -53,12 +49,13 @@ fun Application.configurationBotModule(){
         languageChangeCommand = "lang"
     }
 
-    install(newPackCommand){
+    install(newPackCommand) {
         setI18n(instance(i18n))
         setRedisService(redisService)
+        zipCommand = appEnvironment.property("bot.zip.comment").getString()
     }
 
-    install(messageHandler){
+    install(messageHandler) {
         setI18nPacks(instance(i18n))
         setRedisService(redisService)
     }

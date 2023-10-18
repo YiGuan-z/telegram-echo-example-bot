@@ -6,13 +6,32 @@ ktor真的和kotlin太配了。
 
 ## 如何使用？
 
+```shell
+git clone https://github.com/YiGuan-z/telegram-stickers-collect-bot
+```
+
+```shell
+cd telegram-stickers-collect-bot
+```
+
+```shell
+./gradlew build
+```
+
 需要redis和telegram-bot-token
 
 向用户环境中添加以下环境变量：
 
+---
+```
 TG_BOT_TOKEN=1111111111:ABCD-EFGH-IJGGKSLSJFGHAJFYGA
+```
+```
 TG_BOT_REDIS_URL=your redis url
+```
+```
 TG_BOT_MASTER=your telegram username
+```
 
 
 <details>
