@@ -1,5 +1,5 @@
 {
-  "start": "Hello, I am a meme robot (tentatively)\nUse newpack to open a queue to which you can send memes. After sending emojis, you can use finish to start the emojis collection task.Use lang [language code] to switch the corresponding language.",
+  "start": "Hello, I am a meme robot (tentatively)\nUse newpack to open a queue to which you can send memes\nUse finish to start the emojis collection task.\nUse lang [language Code] to switch the corresponding language.",
   "lang": {
     "lang_choose_prompt": "The language to be switched is: {lang}",
     "lang_select_msg": "The list to choose from is:{list}",
@@ -14,6 +14,7 @@
     "download_error": "There was an error downloading the picture."
   },
   "newpack": {
+    "taskexceed": "There are {count} pictures in the current queue, and a maximum of {max} emojis can be added.",
     "tasklocked": "You currently have a running task. Please wait until the task is completed.",
     "taskexist": "You currently have a collection queue. Please end it first with the finish command. Send any text to get help.",
     "newpack": "All right, when you're ready, send me an emoji or emoji link now! (up to {max})"
@@ -32,7 +33,7 @@
     "unsupported_sticker_source": "{source} is not a supported sticker source. Please refer to the sources command for supported map sources.",
     "no_support": "does not support conversion and is about to be skipped.",
     "get_set_info": "While getting the meme information, please wait a moment.",
-    "set_added_count": "{sticker_count} emoticons have been added from emojis.",
+    "set_added_count": "{sticker_count} emoticons have been added from emojis.There are still {count} left.",
     "invalid_set": "An error occurred while getting the message of the emoji {setName}.",
     "direct_task_started": "Dealing with stickers... \n\n Tip: Try newpack to: \n\n - Export multiple stickers \n\n - Export the entire sticker package",
     "oops_not_file": "It seems that the download failed. Why don't you try again?"

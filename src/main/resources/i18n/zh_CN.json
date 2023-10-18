@@ -1,5 +1,5 @@
 {
-  "start": "你好，我是一个表情包机器人（暂定）\n 使用 /newpack 开启一个队列，你可以向这个队列发送表情包 发送结束后使用 /finish 即可开始表情包收集任务\n 使用 /lang [语言代码] 即可切换对应语言",
+  "start": "你好，我是一个表情包机器人（暂定）\n使用 /newpack 开启一个队列，你可以向这个队列发送表情包\n使用 /finish 即可开始表情包收集任务\n使用 /lang [语言代码] 即可切换对应语言",
   "lang": {
     "lang_choose_prompt": "将要切换的语言为: {lang}",
     "lang_select_msg": "可供选择的列表为{list}",
@@ -14,6 +14,7 @@
     "download_error": "下载图片时出错。"
   },
   "newpack": {
+    "taskexceed": "当前队列有{count}个图片，最多添加{max}张表情包。",
     "tasklocked": "你当前正有一个运行中的任务，请稍候直到该任务完成。",
     "taskexist": "你当前正有一个收集队列。请用 /finish 指令先结束掉它。发送任意文本获取帮助信息。",
     "newpack": "好的，准备好了，现在向我发送表情或表情包链接吧！(最多 {max} 个) "
@@ -32,7 +33,7 @@
     "unsupported_sticker_source": "{source} 不是受支持的贴纸来源。支持的贴图来源请参考 /sources 命令。",
     "no_support": "不支持转换的图片，即将跳过。",
     "get_set_info": "获取表情包信息中，请稍等...",
-    "set_added_count": "已从表情包添加 {sticker_count} 个表情。",
+    "set_added_count": "已从表情包添加 {sticker_count} 个表情。还剩下{count}个",
     "invalid_set": "获取表情包 {setName} 信息时出错。",
     "direct_task_started": "处理贴纸中... \n\n  Tip: 尝试 /newpack 以：\n    - 导出多张贴纸\n    - 导出整个贴纸包",
     "oops_not_file": "好像下载失败了，要不重新试试？"

@@ -137,7 +137,14 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
         try {
             val set = result!!.body()!!.result!!
             if (currentPack.files.size + set.stickers.size >= GlobalResource.maxImages) {
-                bot.sendMessage(chatId, languagePack.getString("newpack.tasklocked"))
+                bot.sendMessage(
+                    chatId,
+                    languagePack.getString(
+                        "newpack.taskexceed",
+                        "count" to currentPack.files.size.toString(),
+                        "max" to GlobalResource.maxImages.toString()
+                    )
+                )
                 return
             }
             logger.info("[Message Handler] chat ${chatId.id} get Sticker Set $setName")
@@ -148,8 +155,8 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                 chatId,
                 languagePack.getString(
                     "sticker.set_added_count",
-                    "sticker_count",
-                    (GlobalResource.maxImages - originCount).toString()
+                    "sticker_count" to originCount.toString(),
+                    "count" to (GlobalResource.maxImages - originCount).toString(),
                 )
             )
             return
@@ -208,12 +215,14 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                                         copyFile(srcPath, Path(destPath))
                                         destPath
                                     }
+
                                     "webm" -> {
                                         val destPath = destPath.removeSuffix("webm") + "gif"
                                         val dest = Path(destPath)
                                         OpenCVService.videoToGif(srcPath, dest)
                                         destPath
                                     }
+
                                     else -> throw RuntimeException()
                                 }
                                 return@async file
@@ -312,7 +321,7 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
         //构建新文件路径和文件扩展名
         val newImgPath = "$imgpath$fileName.$extension"
         withContext(Dispatchers.IO) {
-            OpenCVService.videoToGif(Path(srcPath) , Path(newImgPath) )
+            OpenCVService.videoToGif(Path(srcPath), Path(newImgPath))
         }
         logger.info("[finish command] chat ${chatId.id} ConversionImage save to $newImgPath")
         return newImgPath

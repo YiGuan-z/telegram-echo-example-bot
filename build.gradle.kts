@@ -1,6 +1,8 @@
 plugins {
     kotlin("jvm") version "1.9.10"
     application
+    `java-library`
+    id("org.bytedeco.gradle-javacpp-platform").version("1.5.9")
 }
 
 group = "com.github.cheng.bot"
@@ -8,6 +10,7 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven { url = uri("https://jitpack.io") }
     maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
 }
@@ -58,4 +61,22 @@ kotlin {
 
 application {
     mainClass.set("MainKt")
+}
+
+tasks {
+    withType<Jar> {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE // allow duplicates
+        // Otherwise you'll get a "No main manifest attribute" error
+        manifest {
+            attributes["Main-Class"] = "MainKt"
+        }
+
+        // To add all of the dependencies otherwise a "NoClassDefFoundError" error
+        from(sourceSets.main.get().output)
+
+        dependsOn(configurations.runtimeClasspath)
+        from({
+            configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+        })
+    }
 }

@@ -378,9 +378,6 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
             collectPack.destImg.let { destimgs ->
                 if (destimgs.isEmpty()) throw RuntimeException()
                 val files = destimgs.map { dest ->
-//                    val path = currentPath() + dest.drop(1)
-//                    logger.info("[finish command] chat ${chatId.id} Adding file $path to zip file...")
-//                    Path(path).toFile()
                     Path(dest).toFile()
                 }
                 val zipOutputStream =
@@ -392,6 +389,7 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                         try {
                             file.inputStream().use { input ->
                                 zipOutputStream.putNextEntry(ZipEntry(file.name))
+                                logger.info("[finish command] chat ${chatId.id} Adding file ${file.name} to zip file...")
                                 input.copyTo(zipOutputStream)
                                 zipOutputStream.closeEntry()
                             }
