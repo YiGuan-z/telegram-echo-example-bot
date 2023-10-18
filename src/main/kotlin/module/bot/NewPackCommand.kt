@@ -175,7 +175,7 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                     }
                 }
 
-//                cleanup(chatId)
+                cleanup(chatId)
             }
         }
 
