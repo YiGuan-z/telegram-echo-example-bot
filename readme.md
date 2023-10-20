@@ -1,8 +1,11 @@
-# telegram-echo-example-bot
+# telegram-stickers-bot
 
+用于表情包的下载。
+<details>
 本项目基本是抄代码，各种缝合，ktor占了很大一部分。
 
 ktor真的和kotlin太配了。
+</details>
 
 ## 如何使用？
 
@@ -12,6 +15,10 @@ git clone https://github.com/YiGuan-z/telegram-stickers-collect-bot
 
 ```shell
 cd telegram-stickers-collect-bot
+```
+
+```shell
+./gradlew updateI18n
 ```
 
 ```shell

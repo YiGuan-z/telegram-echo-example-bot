@@ -2,6 +2,8 @@ package application
 
 import module.bot.currentPath
 import module.jackson
+import module.thisLogger
+import org.slf4j.Logger
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -46,11 +48,13 @@ interface LanguagePack {
 
 internal class I18nPacksImpl(private val function: GenerateLanguages) : I18nPacks {
     private var root: Map<Language, Any> = function()
+    private val logger: Logger = thisLogger<I18nPacks>()
     override fun get(language: Language): LanguagePack {
         val row = root[language] ?: throw I18nBuildException("$language is not exist")
 
         @Suppress("unchecked_cast")
         val lang = row as? Map<String, Any> ?: throw I18nBuildException("$language is not a map")
+        if (lang.isEmpty()) throw I18nBuildException("$language is empty")
         return LanguagePackImpl(lang, "", language.lang)
     }
 
@@ -63,53 +67,72 @@ internal class I18nPacksImpl(private val function: GenerateLanguages) : I18nPack
     }
 
     /**
-     * TODO 这里的检查函数需要进行深入检查
+     * 这里的检查函数需要进行深入检查
      * 检查每一条字符串的对应标记
      * 检查对象中的字段个数
      * 以第一个为准，其它的如果发现与第一个不一致，那么就抛出异常并终止运行
+     * 检查字段和它对应的值中的mark标记是否全部一致
      */
     private fun checkLang() {
-        val property = -1
-        val checkStorage: MutableMap<String, Int> = mutableMapOf()
-        root.firstNotNullOf { (_, data) ->
-            @Suppress("unchecked_cast")
-            data as Map<String, Any>
-            data.forEach { (key, value) ->
-                if (value is Map<*, *>) {
-                    checkStorage[key] = value.size
+        //获取结构
+        fun getFirstStruct(root: Map<String, Any>): Map<String, Any> {
+            val structure: MutableMap<String, Any> = mutableMapOf()
+            root.forEach { (key, value) ->
+                if (value is String) {
+                    structure[key] = value.getMarks()
                 } else {
-                    //String
-                    checkStorage[key] = property
+                    @Suppress("unchecked_cast")
+                    structure[key] = getFirstStruct(value as Map<String, Any>)
+                }
+            }
+            return structure
+        }
+
+        @Suppress("unchecked_cast")
+        val structure = getFirstStruct(root.values.first() as Map<String, Any>)
+        logger.trace("[i18n] get first structure: \n {}", structure)
+        //验证后续结构
+        @Suppress("unchecked_cast")
+        fun checkStruct(node: Map<String, Any>, struct: Map<String, Any>) {
+            node.forEach { (key, data) ->
+                if (data is String) {
+                    val marks = data.getMarks()
+                    if (marks != struct[key]) {
+                        logger.error("[i18n] check fail key $key expected mark is:\n ${struct[key]}\n but get it is:\n $marks")
+                        throw I18nCheckException("[i18n] check fail key $key expected mark is:\n ${struct[key]}\n but get it is:\n $marks")
+                    }
+                } else {
+                    data as Map<String, Any>
+                    val children =
+                        struct[key] as? Map<*, *> ?: throw I18nCheckException("[i18n] check lang failed: $key")
+                    checkStruct(data, children as Map<String, Any>)
                 }
             }
         }
-        root.forEach { (lang, data) ->
+        root.forEach { (language, node) ->
             @Suppress("unchecked_cast")
-            data as Map<String, Any>
-            if (lang.isBlank()) {
-                throw I18nBuildException("language can not be blank")
-            }
-            data.forEach { (key, value) ->
-                if (key.isBlank()) {
-                    throw I18nBuildException("key can not be blank")
-                }
-                checkStorage[key]?.let {
-                    if (it == property) {
-                        //String
-                        value as? String ?: throw I18nBuildException("value must be String")
-                    } else {
-                        //Map
-                        @Suppress("unchecked_cast")
-                        val obj = value as? Map<String, String> ?: throw I18nBuildException("value must be a object")
-                        if (it != obj.size) {
-                            throw I18nBuildException("i18n json files must be the same size")
-                        }
-                    }
-                }
-            }
-            if (data.values.isEmpty()) throw I18nBuildException("language data can not be empty")
+            node as? Map<String, Any>
+                ?: throw I18nCheckException("${language.lang} should be a map, not be a ${node::class.simpleName}")
+            checkStruct(node, structure)
         }
     }
+}
+
+private val regex = Regex("\\{(.*?)\\}")
+
+//被 {} 包裹住的文字就是mark，获取这些标记，并返回出去。
+private fun String.getMarks(): List<String> {
+    val matcher = regex.findAll(this)
+    val iterator = matcher.iterator()
+    if (!iterator.hasNext()) {
+        return emptyList()
+    }
+    val list = mutableListOf<String>()
+    iterator.forEach {
+        //its value is {lang}, so used drop function
+        list.add(it.value.dropLast(1).drop(1))
+    }
+    return list
 }
 
 internal class LanguagePackImpl(
@@ -147,6 +170,7 @@ internal class LanguagePackImpl(
 }
 
 class I18nBuildException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+class I18nCheckException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 data class Language(val lang: String = "") {
     companion object {

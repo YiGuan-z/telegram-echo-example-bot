@@ -1,3 +1,11 @@
+import java.io.FileOutputStream
+import java.nio.file.Files
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.Path
+import kotlin.io.path.deleteRecursively
+
 plugins {
     kotlin("jvm") version "1.9.10"
     application
@@ -78,5 +86,31 @@ tasks {
         from({
             configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
         })
+    }
+    named("build"){
+        dependsOn("updateI18n")
+    }
+}
+
+@OptIn(ExperimentalPathApi::class)
+task("updateI18n") {
+    //删除resources下的i8n.zip
+    //压缩i18n文件夹下的内容为一个压缩包 并输出到它的父路径也就是resource下。
+    Files.deleteIfExists(Path("./src/main/resources/i18n.zip"))
+    Path("./temp").deleteRecursively()
+    Files.deleteIfExists(Path("./temp"))
+    val newZipEntryPath = Path("./src/main/resources/i18n.zip")
+    val dir = Path("./src/main/resources/i18n/").toFile()
+    ZipOutputStream(FileOutputStream(newZipEntryPath.toFile())).use { zipOutPut ->
+        dir.listFiles()?.forEach { file ->
+            if (file.name.endsWith(".json")) {
+                file.inputStream().use { input ->
+                    zipOutPut.putNextEntry(ZipEntry(file.name))
+                    input.copyTo(zipOutPut)
+                    zipOutPut.closeEntry()
+                }
+            }
+        }
+        zipOutPut.finish()
     }
 }

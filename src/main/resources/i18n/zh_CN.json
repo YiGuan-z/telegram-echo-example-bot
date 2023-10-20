@@ -11,7 +11,8 @@
     "user_prompt": "哎呀，出现错误了，请联系 @{user}并描述出现的问题",
     "err_get_filelink": "获取文件 {fileId} 的地址时出错，跳过...",
     "convert_error": "转换格式时出错。",
-    "download_error": "下载图片时出错。"
+    "download_error": "下载图片时出错。",
+    "oops": "下载到的文件应该是文件。也许是下载了一个目录或者没有下载到？"
   },
   "newpack": {
     "taskexceed": "当前队列有{count}个图片，最多添加{max}张表情包。",

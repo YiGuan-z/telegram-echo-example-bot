@@ -22,7 +22,7 @@ jobs:
           version: '22.3.2'
           distribution: 'graalvm'
           java-version: 17
-          native-image-job-reports: 'true'
+          native-image-job-reports: 'false'
       - name: 'SetUp Gradle'
         uses: gradle/gradle-build-action@v2.8.0
       - name: 'build'

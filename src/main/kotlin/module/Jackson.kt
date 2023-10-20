@@ -2,6 +2,7 @@ package module
 
 import application.BotDSL
 import application.createAppPlugin
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 
 /**
@@ -12,17 +13,26 @@ import com.fasterxml.jackson.databind.ObjectMapper
  **/
 
 val jackson = createAppPlugin("jackson", ::ObjectMapperConfig) { config ->
-    return@createAppPlugin ObjectMapper().apply<ObjectMapper> { config.objSetting?.invoke(this) }.apply { logger().info("jackson is ready") }
+    return@createAppPlugin ObjectMapper().apply<ObjectMapper> {
+        config.objectSettings.forEach { it() }
+    }.apply { logger().info("jackson is ready") }
 }
 
 typealias objSetting = ObjectMapper.() -> Unit
 
 @BotDSL
 class ObjectMapperConfig {
-    internal var objSetting: objSetting? = null
+    internal var objectSettings: MutableList<objSetting> = mutableListOf()
 
     fun jacksonConfig(setting: objSetting) {
-        objSetting = setting
+        objectSettings.add(setting)
     }
 
+}
+
+@BotDSL
+fun ObjectMapperConfig.ignoreUnknownProperties(ignore: Boolean) {
+    jacksonConfig {
+        configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignore)
+    }
 }

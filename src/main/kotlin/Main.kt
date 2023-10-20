@@ -1,8 +1,8 @@
 import application.Application
 import application.getJsonFiles
 import application.i18n
-import com.fasterxml.jackson.databind.DeserializationFeature
 import module.bot.*
+import module.ignoreUnknownProperties
 import module.jackson
 import module.opencv.OpenCVService
 import module.redis.RedisFactory
@@ -12,18 +12,20 @@ import module.redis.redisFactory
 
 suspend fun main(args: Array<String>) = Application.main(args, Application::configModule)
 
-fun Application.configModule() {
+suspend fun Application.configModule() {
     OpenCVService.init()
-
     install(jackson) {
-        jacksonConfig {
-            configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        }
+        //忽略未知属性
+        ignoreUnknownProperties(true)
     }
-
     install(i18n) {
         generateLanguages = { getJsonFiles() }
     }
+    configurationRedis()
+    configurationBotModule()
+}
+
+fun Application.configurationRedis() {
     install(jacksonRedisCodec) {
         mapper = instance(jackson)
     }
@@ -31,7 +33,6 @@ fun Application.configModule() {
     install(redisFactory) {
         url = appEnvironment.config("bot").property("redis_url").getString()
     }
-    configurationBotModule()
 }
 
 fun Application.configurationBotModule() {

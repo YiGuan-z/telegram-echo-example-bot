@@ -1,5 +1,6 @@
 package module.bot
 
+import application.BotDSL
 import application.BotDispatcher
 import application.createBotDispatcherModule
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
@@ -10,13 +11,24 @@ import com.github.kotlintelegrambot.dispatcher.Dispatcher
  * @date 2023/10/15-14:16
  * @doc 这里存放所有管理员的命令
  **/
-val adminCommands = createBotDispatcherModule("adminCommands",::AdminCommandsConfiguration){
+val adminCommands = createBotDispatcherModule("adminCommands", ::AdminCommandsConfiguration) {
     AdminCommands()
 }
-class AdminCommandsConfiguration{
 
+@BotDSL
+class AdminCommandsConfiguration {
+    var adminUser: String? = null
 }
-class AdminCommands:BotDispatcher {
+
+@BotDSL
+fun AdminCommandsConfiguration.setAdminUsername(username: String) {
+    this.adminUser = username
+}
+
+
+class AdminCommands : BotDispatcher {
+    // start server
+    // stop server
     override val dispatch: Dispatcher.() -> Unit
         get() = TODO("Not yet implemented")
     override val dispatcherName: String

@@ -11,7 +11,8 @@
     "user_prompt": "Oops, there was an error, please contact @{user} and describe the problem.",
     "err_get_filelink": "There was an error in getting the address of the file {fileId}, skip...",
     "convert_error": "Error when converting the format。",
-    "download_error": "There was an error downloading the picture."
+    "download_error": "There was an error downloading the picture.",
+    "oops": "The downloaded file should be a file. Maybe you downloaded a directory or didn't download it to？"
   },
   "newpack": {
     "taskexceed": "There are {count} pictures in the current queue, and a maximum of {max} emojis can be added.",

@@ -11,6 +11,7 @@ import kotlinx.coroutines.*
 import module.bot.modal.ChatLangProfile
 import module.bot.modal.Fpath
 import module.currentChatId
+import module.logger
 import module.opencv.OpenCVService
 import module.redis.RedisService
 import module.redis.currentChatLangProfile
@@ -24,6 +25,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.*
 
@@ -37,7 +39,7 @@ val newPackCommand = createBotDispatcherModule("newPackCommand", ::NewPackComman
     val redisService = requireNotNull(config.redisService) { "need redisService" }
     val i18n = requireNotNull(config.i18nPacks) { "need i18nPacks" }
     val zipCommand = requireNotNull(config.zipCommand) { "need zipCommand" }
-    NewPackCommand(redisService, i18n,zipCommand)
+    NewPackCommand(redisService, i18n, zipCommand)
 }
 
 class NewPackCommandConfiguration {
@@ -56,7 +58,11 @@ fun NewPackCommandConfiguration.setI18n(i18nPacks: I18nPacks) {
     this.i18nPacks = i18nPacks
 }
 
-class NewPackCommand(private val redisService: RedisService, private val i18n: I18nPacks,private val zipCommand: String) : BotDispatcher {
+class NewPackCommand(
+    private val redisService: RedisService,
+    private val i18n: I18nPacks,
+    private val zipCommand: String
+) : BotDispatcher {
     private val logger = thisLogger<NewPackCommand>()
     override val dispatch: Dispatcher.() -> Unit = {
         newPackCommand()
@@ -167,17 +173,23 @@ class NewPackCommand(private val redisService: RedisService, private val i18n: I
                 logger.info("[finish command] chat ${chatId.id} sending zip file...")
                 Path(zipFile).toFile().let {
                     if (it.isFile) {
-                        bot.sendDocument(
-                            chatId = chatId,
-                            document = TelegramFile.ByFile(it),
-                        )
-                        logger.info("[finish command] chat ${chatId.id} sending zip file...done")
+                        val isEmpty = runCatching { ZipFile(it).size() == 0 }.getOrNull() ?: true
+                        if (isEmpty) {
+                            bot.sendMessage(chatId, langPack.getString("sticker.oops_not_file"))
+                            logger.info("[finish command] chat ${chatId.id} oops this zip is null")
+                        } else {
+                            bot.sendDocument(
+                                chatId = chatId,
+                                document = TelegramFile.ByFile(it),
+                            )
+                            logger.info("[finish command] chat ${chatId.id} sending zip file...done")
+                            cleanup(chatId)
+                        }
                     } else {
                         bot.sendMessage(chatId, langPack.getString("oops"))
                     }
                 }
 
-                cleanup(chatId)
             }
         }
 
