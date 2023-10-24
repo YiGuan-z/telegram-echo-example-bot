@@ -12,6 +12,7 @@ import com.github.kotlintelegrambot.entities.stickers.Sticker
 import com.github.kotlintelegrambot.entities.stickers.StickerSet
 import kotlinx.coroutines.*
 import module.bot.modal.Fpath
+import module.bot.modal.StickerCollectPack
 import module.currentChatId
 import module.opencv.OpenCVService
 import module.redis.RedisService

@@ -1,0 +1,22 @@
+{
+  "bot": {
+    "tg_token": "$TG_BOT_TOKEN",
+    "redis_url": "$TG_BOT_REDIS_URL",
+    "master": "$TG_BOT_MASTER",
+    "lang": {
+      "default": "zh_CN"
+    },
+    "images": {
+      "file_storage": "./storage",
+      "image_convert_path": "convert",
+      "max_images": 1000,
+      "sticker_sources": [
+        "https://t.me/addstickers/",
+        "https://t.me/addstickers/"
+      ]
+    },
+    "zip": {
+      "comment": "create by github.com/YiGuan-z/telegram-stickers-collect-bot"
+    }
+  }
+}

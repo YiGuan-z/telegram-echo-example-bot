@@ -1,6 +1,6 @@
 # telegram-stickers-bot
 
-用于表情包的下载。
+telegram表情包下载机器人根据:<https://github.com/phoenixlzx/telegram-stickerimage-bot/> 重构而来
 <details>
 本项目基本是抄代码，各种缝合，ktor占了很大一部分。
 
@@ -30,16 +30,18 @@ cd telegram-stickers-collect-bot
 向用户环境中添加以下环境变量：
 
 ---
+
 ```
 TG_BOT_TOKEN=1111111111:ABCD-EFGH-IJGGKSLSJFGHAJFYGA
 ```
+
 ```
 TG_BOT_REDIS_URL=your redis url
 ```
+
 ```
 TG_BOT_MASTER=your telegram username
 ```
-
 
 <details>
 

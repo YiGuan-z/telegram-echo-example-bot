@@ -10,8 +10,8 @@ import com.github.kotlintelegrambot.entities.TelegramFile
 import kotlinx.coroutines.*
 import module.bot.modal.ChatLangProfile
 import module.bot.modal.Fpath
+import module.bot.modal.StickerCollectPack
 import module.currentChatId
-import module.logger
 import module.opencv.OpenCVService
 import module.redis.RedisService
 import module.redis.currentChatLangProfile
@@ -20,14 +20,14 @@ import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
-import kotlin.io.path.*
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.Path
+import kotlin.io.path.deleteRecursively
+import kotlin.io.path.pathString
 
 /**
  *
@@ -101,13 +101,13 @@ class NewPackCommand(
             val langProfile = redisService.currentChatLangProfile(chatId) ?: return@command
             val languagePack = i18n.get(langProfile.lang)
             try {
-                val stickerCollectPack = redisService.getCurrentPack(chatId)
-                stickerCollectPack?.let {
+                val stickerCollectPack = redisService.getCurrentPack(chatId)!!
+                stickerCollectPack.let {
                     if (it.isLocked) {
                         bot.sendMessage(chatId, languagePack.getString("newpack.tasklocked"))
                         return@command
                     }
-                    val map = args.resolveArgs()
+                    val map = args.toMap()
                     val format = map["-format"]
                     val width = map["width"]
 
@@ -311,34 +311,10 @@ class NewPackCommand(
                 srcImg.forEach { srcPath ->
                     launch {
                         try {
-                            if (srcPath.lastIndexOf('.') != -1) {
-                                val suffix = srcPath.suffix()
-                                val srcPath = Path(srcPath)
-                                val destPath = fpath.imgPath + srcPath.basename()
-                                val savePath = when (suffix) {
-                                    "webp" -> {
-                                        copyFile(srcPath, Path(destPath))
-                                        destPath
-                                    }
-
-                                    "webm" -> {
-                                        val destPath = destPath.removeSuffix("webm") + "gif"
-                                        val dest = Path(destPath)
-                                        OpenCVService.videoToGif(srcPath, dest)
-                                        destPath
-                                    }
-
-                                    else -> throw RuntimeException()
-                                }
-                                destImg.add(savePath)
-                                return@launch
-                            }
-                            convert(
-                                srcPath,
-                                fpath,
-                                format ?: "webp",
-                                width ?: 512.0
-                            ).run { destImg.add(this) }
+                            //假设所有下载得到的文件都有文件后缀
+                            val convert = convert(srcPath, fpath)
+                            destImg.add(convert)
+                            return@launch
                         } catch (ignore: RuntimeException) {
                             logger.error("[finish command] chat ${chatId.id} Converting images error", ignore)
                             bot.sendMessage(chatId, langPack.getString("sticker.no_support"))
@@ -353,28 +329,52 @@ class NewPackCommand(
     }
 
     //用于图像转换
-    private suspend fun CommandHandlerEnvironment.convert(
-        srcPath: String,
-        fpath: Fpath,
-        format: String,
-        width: Double
-    ): String {
-        val chatId = currentChatId()
-        val imgpath = fpath.imgPath
-        val fileName = Path(srcPath).fileName.name.let {
-            if (it.lastIndexOf('.') != -1) {
-                it.substring(0, it.lastIndexOf('.') + 1)
-            } else {
-                it
+//    private suspend fun CommandHandlerEnvironment.convert(
+//        srcPath: String,
+//        fpath: Fpath,
+//        format: String,
+//        width: Double
+//    ): String {
+//        val chatId = currentChatId()
+//        val imgpath = fpath.imgPath
+//        val fileName = Path(srcPath).fileName.name.let {
+//            if (it.lastIndexOf('.') != -1) {
+//                it.substring(0, it.lastIndexOf('.') + 1)
+//            } else {
+//                it
+//            }
+//        }
+//        //构建新文件路径和文件扩展名
+//        val newImgPath = "$imgpath$fileName$format"
+//        withContext(Dispatchers.IO) {
+//            OpenCVService.conversionImageFile(srcPath.drop(2), newImgPath.drop(2), width, width, 1.0)
+//        }
+//        logger.info("[finish command] chat ${chatId.id} ConversionImage save to $newImgPath")
+//        return newImgPath
+//    }
+    private suspend fun convert(srcPath: String, fpath: Fpath): String {
+        if (srcPath.lastIndexOf('.') == -1) {
+            val suffix = srcPath.suffix()
+            val srcPath = Path(srcPath)
+            val destPath = fpath.imgPath + srcPath.basename()
+            val savePath = when (suffix) {
+                "webp" -> {
+                    copyFile(srcPath, Path(destPath))
+                    destPath
+                }
+
+                "webm" -> {
+                    val abstractFile = destPath.removeSuffix("webm") + "gif"
+                    val dest = Path(abstractFile)
+                    OpenCVService.videoToGif(srcPath, dest)
+                    abstractFile
+                }
+
+                else -> throw RuntimeException()
             }
+            return savePath
         }
-        //构建新文件路径和文件扩展名
-        val newImgPath = "$imgpath$fileName$format"
-        withContext(Dispatchers.IO) {
-            OpenCVService.conversionImageFile(srcPath.drop(2), newImgPath.drop(2), width, width, 1.0)
-        }
-        logger.info("[finish command] chat ${chatId.id} ConversionImage save to $newImgPath")
-        return newImgPath
+        throw RuntimeException()
     }
 
     //将文件压缩为zip
@@ -442,21 +442,4 @@ suspend fun RedisService.setCurrentPack(id: ChatId.Id, pack: StickerCollectPack)
 
 suspend fun RedisService.removeCurrentPack(id: ChatId.Id) {
     remove("${RedisKeys.newPack}:${id.id}")
-}
-
-data class StickerCollectPack @JvmOverloads constructor(
-    val start: Long = -1,
-    val files: Set<String> = emptySet(),
-    val srcImg: Set<String> = emptySet(),
-    val destImg: Set<String> = emptySet(),
-    val isLocked: Boolean = false,
-)
-
-fun StickerCollectPack.startTime(): LocalDateTime? {
-    return if (start == -1L) {
-        null
-    } else {
-        LocalDateTime
-            .ofInstant(Instant.ofEpochSecond(start), ZoneOffset.ofHours(8))
-    }
 }

@@ -16,7 +16,8 @@ import kotlin.io.path.pathString
 /**
  * 解析参数，将参数解析为Map
  */
-fun List<String>.resolveArgs(): Map<String, String> {
+fun List<String>.toMap(): Map<String, String> {
+    if (isEmpty()) return emptyMap()
     val result: MutableMap<String, String> = mutableMapOf()
     var key = ""
     this.forEachIndexed { index, arg ->
