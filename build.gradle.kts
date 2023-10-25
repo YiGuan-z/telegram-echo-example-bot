@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.FileOutputStream
 import java.nio.file.Files
 import java.util.zip.ZipEntry
@@ -64,7 +66,7 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(8)
+    jvmToolchain(17)
 }
 
 application {
@@ -87,8 +89,20 @@ tasks {
             configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
         })
     }
-    named("build"){
+    named("build") {
         dependsOn("updateI18n")
+    }
+    withType<KotlinCompile> {
+        kotlinOptions {
+            freeCompilerArgs += "-Xjsr305=strict"
+            freeCompilerArgs += "-Xcontext-receivers"
+            jvmTarget = "17"
+        }
+        configureEach{
+            compilerOptions
+                .languageVersion.set(KotlinVersion.KOTLIN_2_0)
+        }
+
     }
 }
 
