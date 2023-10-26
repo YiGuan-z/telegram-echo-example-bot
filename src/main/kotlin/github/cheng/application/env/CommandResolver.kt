@@ -1,6 +1,8 @@
 package github.cheng.application.env
 
-import github.cheng.module.bot.toMap
+import github.cheng.application.splitPair
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 
 /**
@@ -9,27 +11,20 @@ import github.cheng.module.bot.toMap
  * @date 2023/10/21-02:22
  * @doc
  **/
-class CommandResolver(args: List<String>) {
-    val map = args.toMap()
+//在这里对不同的args做缓存，缓存那些已经生成出来了的实例
+fun commandArgs(args: Array<String>): CommandArgs = CommandArgsImpl(args)
 
-    constructor() : this(emptyList())
 
-    fun resolveNullable(mark: String): String? {
-        return map[mark]
+interface CommandArgs : ReadOnlyProperty<Any?, String>
+
+internal class CommandArgsImpl(
+    private val args: Array<String>
+) : CommandArgs {
+    //只有在getValue的时候触发一次。
+    override fun getValue(thisRef: Any?, property: KProperty<*>): String {
+        val awaitResolveMark = property.name
+        val pairs = args.mapNotNull { it.splitPair('=') }.toMap()
+        return pairs[awaitResolveMark] ?: throw IllegalArgumentException("$awaitResolveMark is not a valid argument")
     }
-
-    fun resolve(mark: String): String =
-        resolveNullable(mark) ?: throw IllegalArgumentException("$mark is not a valid argument")
-
-//    fun resolveOptions()
-
 }
 
-data class OptionProvide(
-    val mark: String,
-    val defaultValue: String,
-    val require: Boolean,
-    val onGet: (String) -> Unit
-) {
-    constructor(mark: String, defaultValue: String, onGet: (String) -> Unit) : this(mark, defaultValue, true, onGet)
-}

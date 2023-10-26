@@ -56,6 +56,7 @@ dependencies {
 
     implementation("io.lettuce:lettuce-core:6.2.6.RELEASE")
     implementation("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.1.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
     compileOnly("com.squareup.retrofit2:retrofit:$retrofit_version")
     compileOnly("com.squareup.retrofit2:converter-gson:$retrofit_version")
     testImplementation(kotlin("test"))
@@ -66,7 +67,7 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(8)
 }
 
 application {
@@ -96,7 +97,7 @@ tasks {
         kotlinOptions {
             freeCompilerArgs += "-Xjsr305=strict"
             freeCompilerArgs += "-Xcontext-receivers"
-            jvmTarget = "17"
+//            jvmTarget = "8"
         }
         configureEach{
             compilerOptions

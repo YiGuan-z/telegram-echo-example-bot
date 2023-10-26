@@ -1,6 +1,6 @@
 package github.cheng
 
-object GlobalResource {
+object TelegramResources {
     var imageStorage: String by setOnce()
     var defaultLang: String by setOnce()
     var adminName: String by setOnce()

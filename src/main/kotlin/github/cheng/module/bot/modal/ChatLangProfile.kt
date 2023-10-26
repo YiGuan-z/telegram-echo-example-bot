@@ -1,6 +1,6 @@
 package github.cheng.module.bot.modal
 
-import github.cheng.GlobalResource
+import github.cheng.TelegramResources
 import github.cheng.application.Language
 
 /**
@@ -11,5 +11,5 @@ import github.cheng.application.Language
  **/
 data class ChatLangProfile(
     val chatId: Long = -1,
-    val lang: Language = Language.of(GlobalResource.defaultLang)
+    val lang: Language = Language.of(TelegramResources.defaultLang)
 )
