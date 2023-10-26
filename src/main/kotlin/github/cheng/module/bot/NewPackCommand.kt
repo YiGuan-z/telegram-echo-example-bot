@@ -1,6 +1,6 @@
 package github.cheng.module.bot
 
-import github.cheng.GlobalResource
+import github.cheng.TelegramResources
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.handlers.CommandHandlerEnvironment
@@ -78,7 +78,7 @@ class NewPackCommand(
                 redisService.setCurrentPack(chatId, StickerCollectPack(message.date))
                 bot.sendMessage(
                     chatId,
-                    languagePack.getString("newpack.newpack", "max", GlobalResource.maxImages.toString())
+                    languagePack.getString("newpack.newpack", "max", TelegramResources.maxImages.toString())
                 )
                 return@command
             }
@@ -117,7 +117,7 @@ class NewPackCommand(
                     return@command
                 }
             } catch (ignore: Exception) {
-                bot.sendMessage(chatId, languagePack.getString("error.user_prompt", "user", GlobalResource.adminName))
+                bot.sendMessage(chatId, languagePack.getString("error.user_prompt", "user", TelegramResources.adminName))
                 logger.error("[finish command] get a error chat id is ${chatId.id} and error is", ignore)
                 return@command
             }
@@ -138,7 +138,7 @@ class NewPackCommand(
         val collectPack = stickerCollectPack.copy(isLocked = true)
         logger.info("[Pack Task] chatId ${chatId.id} Starting pack task...")
         redisService.setCurrentPack(chatId, collectPack)
-        val packPath = "${GlobalResource.imageStorage}/${chatId.id}"
+        val packPath = "${TelegramResources.imageStorage}/${chatId.id}"
 
         val fpath = Fpath(
             packPath,
@@ -380,7 +380,7 @@ class NewPackCommand(
         val chatId = currentChatId()
         logger.info("[finish command] chat ${chatId.id} Adding files to zip file...")
         //待压缩
-        val zipPath = "${Path("").toAbsolutePath().pathString}${GlobalResource.imageStorage.drop(1)}/${chatId.id}"
+        val zipPath = "${Path("").toAbsolutePath().pathString}${TelegramResources.imageStorage.drop(1)}/${chatId.id}"
         val fpath = Fpath(zipPath)
         val collectPack = redisService.getCurrentPack(chatId)!!
         return withContext(Dispatchers.IO) {
@@ -419,7 +419,7 @@ class NewPackCommand(
         logger.info("[finish command] chat ${chat.id} file Cleanup")
         withContext(Dispatchers.IO) {
             redisService.removeCurrentPack(chat)
-            val path = Path("${currentPath()}${GlobalResource.imageStorage.drop(1)}/${chat.id}")
+            val path = Path("${currentPath()}${TelegramResources.imageStorage.drop(1)}/${chat.id}")
             path.deleteRecursively()
         }
     }

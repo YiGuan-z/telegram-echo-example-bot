@@ -1,6 +1,6 @@
 package github.cheng.module.bot
 
-import github.cheng.GlobalResource
+import github.cheng.TelegramResources
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
@@ -62,7 +62,7 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                                 val url =
                                     message.text!!.slice(messageEntity.offset..<messageEntity.offset + messageEntity.length)
                                 val legalSource = run {
-                                    val find = GlobalResource.stickerSources.find { url.startsWith(it) }
+                                    val find = TelegramResources.stickerSources.find { url.startsWith(it) }
                                     find != null
                                 }
                                 if (legalSource && url.length > 25) {
@@ -112,14 +112,14 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
             return
         }
 
-        if (currentPack.files.size >= GlobalResource.maxImages) {
+        if (currentPack.files.size >= TelegramResources.maxImages) {
             bot.sendMessage(chatId, languagePack.getString("sticker.taskfull"))
             return
         }
 
         val files = currentPack.files.toMutableSet().apply { add(sticker.fileId) }
         redisService.setCurrentPack(chatId, currentPack.copy(files = files))
-        val remain = GlobalResource.maxImages - files.size
+        val remain = TelegramResources.maxImages - files.size
         val message = if (remain != 0) {
             languagePack.getString("sticker.saved", "remain", remain.toString())
         } else {
@@ -136,13 +136,13 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
         if (e != null) throw e
         try {
             val set = result!!.body()!!.result!!
-            if (currentPack.files.size + set.stickers.size >= GlobalResource.maxImages) {
+            if (currentPack.files.size + set.stickers.size >= TelegramResources.maxImages) {
                 bot.sendMessage(
                     chatId,
                     languagePack.getString(
                         "newpack.taskexceed",
                         "count" to currentPack.files.size.toString(),
-                        "max" to GlobalResource.maxImages.toString()
+                        "max" to TelegramResources.maxImages.toString()
                     )
                 )
                 return
@@ -156,7 +156,7 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                 languagePack.getString(
                     "sticker.set_added_count",
                     "sticker_count" to originCount.toString(),
-                    "count" to (GlobalResource.maxImages - originCount).toString(),
+                    "count" to (TelegramResources.maxImages - originCount).toString(),
                 )
             )
             return
@@ -183,7 +183,7 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
         val collectPack = newPackHandler()
         try {
             redisService.setCurrentPack(chatId, collectPack.copy(isLocked = true))
-            val packpath = "${GlobalResource.imageStorage}/${chatId.id}"
+            val packpath = "${TelegramResources.imageStorage}/${chatId.id}"
             val fpath = Fpath(packpath)
             coroutineScope {
                 withContext(Dispatchers.IO) {
@@ -332,7 +332,7 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
         logger.info("[Message Handle] chat ${chat.id} file Cleanup")
         withContext(Dispatchers.IO) {
             redisService.removeCurrentPack(chat)
-            val path = Path("${currentPath()}${GlobalResource.imageStorage.drop(1)}/${chat.id}")
+            val path = Path("${currentPath()}${TelegramResources.imageStorage.drop(1)}/${chat.id}")
             path.deleteRecursively()
         }
     }

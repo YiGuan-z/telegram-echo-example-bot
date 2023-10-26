@@ -1,12 +1,11 @@
 package github.cheng.application
 
-import com.github.kotlintelegrambot.dispatch
-import com.github.kotlintelegrambot.logging.LogLevel
-import github.cheng.GlobalResource
-import github.cheng.application.env.*
+import github.cheng.application.env.ApplicationConfig
+import github.cheng.application.env.ConfigLoader
 import github.cheng.application.env.ConfigLoader.Default.load
-import github.cheng.module.bot.bot
-import github.cheng.module.mkdirImageFinder
+import github.cheng.application.env.MapApplicationConfig
+import github.cheng.application.env.mergeWith
+import github.cheng.engine.TelegramBot.start
 import github.cheng.module.shutdown
 import github.cheng.module.thisLogger
 import org.slf4j.Logger
@@ -106,46 +105,26 @@ class Application(applicationConfig: ApplicationConfig) {
         return plugins[attributeKey] as PluginA
     }
 
-
     companion object {
-        suspend fun main(args: Array<String>, block: suspend Application.() -> Unit) {
+        suspend fun main(args: Array<String>, engine: ApplicationEngine, block: suspend Application.() -> Unit) {
             val environment = buildApplicationConfig(args)
             val application = Application(environment)
             with(application) {
-                configGlobalResource()
                 init()
                 block()
-                configBot()
-                initShutdownHook()
             }
-            application.instance(bot).startPolling()
-                .also { thisLogger<Application>().info("机器人已启动") }
+            engine.create(application)
+            with(application) {
+                initShutdownHook()
+                this.run { start() }
+            }
         }
-
 
         private val init: Application.() -> Unit = {
             //打印banner
             logger.info("application正在启动")
             banner()?.let { logger.info(it) }
-            mkdirImageFinder()
         }
-
-
-        private val configBot: Application.() -> Unit = {
-            install(bot) {
-                token = appEnvironment.config("bot").property("tg_token").getString()
-                logLevel = LogLevel.Error
-                dispatch {
-                    val dispatcher = this
-                    botDispatcherModules.forEach { (_, botDispatcherModule) ->
-                        botDispatcherModule.apply { dispatcher.dispatch() }
-                        logger.info("Bot Dispatcher Module loaded: {}", botDispatcherModule.dispatcherName)
-                        logger.info("Bot Dispatcher Module description: {}", botDispatcherModule.description)
-                    }
-                }
-            }
-        }
-
 
     }
 }
@@ -162,24 +141,6 @@ private fun Application.banner(): String? =
         this::class.java.classLoader.getResourceAsStream("banner.txt")?.readBytes()?.readToString()
     }.getOrNull()
 
-context (Application)
-private fun configGlobalResource() {
-    appEnvironment.property("bot.lang.default").getStringOrNull()?.let {
-        GlobalResource.defaultLang = it
-    }
-    appEnvironment.property("bot.master").getStringOrNull()?.let {
-        GlobalResource.adminName = it
-    }
-    appEnvironment.property("bot.images.file_storage").getStringOrNull()?.let {
-        GlobalResource.imageStorage = it
-    }
-    appEnvironment.property("bot.images.max_images").getStringOrNull()?.let {
-        GlobalResource.maxImages = it.toInt()
-    }
-    appEnvironment.property("bot.images.sticker_sources").getListOrNull()?.let {
-        GlobalResource.stickerSources = it
-    }
-}
 
 private fun ByteArray.readToString() = String(this)
 
@@ -250,4 +211,9 @@ fun <PlugConfig : Any, Plugin : Any> createPlugin(
 
 }
 
+interface ApplicationEngine {
+    fun create(application: Application): Application
+    fun Application.start()
+    fun Application.stop()
+}
 
