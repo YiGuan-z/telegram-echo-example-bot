@@ -333,35 +333,11 @@ class NewPackCommand(
         logger.info("[finish command] chat ${chatId.id} Converting images end")
     }
 
-    // 用于图像转换
-//    private suspend fun CommandHandlerEnvironment.convert(
-//        srcPath: String,
-//        fpath: Fpath,
-//        format: String,
-//        width: Double
-//    ): String {
-//        val chatId = currentChatId()
-//        val imgpath = fpath.imgPath
-//        val fileName = Path(srcPath).fileName.name.let {
-//            if (it.lastIndexOf('.') != -1) {
-//                it.substring(0, it.lastIndexOf('.') + 1)
-//            } else {
-//                it
-//            }
-//        }
-//        //构建新文件路径和文件扩展名
-//        val newImgPath = "$imgpath$fileName$format"
-//        withContext(Dispatchers.IO) {
-//            OpenCVService.conversionImageFile(srcPath.drop(2), newImgPath.drop(2), width, width, 1.0)
-//        }
-//        logger.info("[finish command] chat ${chatId.id} ConversionImage save to $newImgPath")
-//        return newImgPath
-//    }
     private suspend fun convert(
         srcPath: String,
         fpath: Fpath,
     ): String {
-        if (srcPath.lastIndexOf('.') == -1) {
+        if (srcPath.lastIndexOf('.') != -1) {
             val suffix = srcPath.suffix()
             val srcPath = Path(srcPath)
             val destPath = fpath.imgPath + srcPath.basename()

@@ -14,6 +14,7 @@ import github.cheng.module.thisLogger
 import github.cheng.setOnce
 
 object TelegramBot : ApplicationEngine {
+    @Suppress("MemberVisibilityCanBePrivate")
     internal var botInstance: Bot by setOnce()
 
     override fun create(application: Application) {

@@ -30,7 +30,7 @@ import kotlin.io.path.name
  * @date 2023/10/17-00:36
  * @doc 对消息进行处理
  **/
-
+@JvmField
 val messageHandler =
     createBotDispatcherModule("messageHandler", ::MessageHandlerConfiguration) { config ->
         val redisService = requireNotNull(config.redisService) { "redisService is null" }
@@ -38,7 +38,14 @@ val messageHandler =
         MessageHandler(redisService, i18nPacks)
     }
 
-class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) : BotDispatcher {
+class MessageHandler(
+    @Suppress("MemberVisibilityCanBePrivate")
+    @JvmField
+    val redisService: RedisService,
+    @Suppress("MemberVisibilityCanBePrivate")
+    @JvmField
+    val i18nPacks: I18nPacks
+) : BotDispatcher {
     @JvmField
     val logger = thisLogger<MessageHandler>()
 
@@ -244,7 +251,7 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                             } catch (e: Exception) {
                                 logger.error("[Message Handler] chat ${chatId.id} convert error")
                                 bot.sendMessage(chatId, languagePack.getString("error.convert_error"))
-                                throw RuntimeException(e)
+                                throw e
                             }
                         }
                     launch(Dispatchers.IO) {

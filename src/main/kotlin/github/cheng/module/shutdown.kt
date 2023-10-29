@@ -1,6 +1,7 @@
 package github.cheng.module
 
 import github.cheng.application.createAppPlugin
+import kotlin.concurrent.thread
 
 /**
  *
@@ -9,7 +10,7 @@ import github.cheng.application.createAppPlugin
  * @doc
  **/
 internal val shutdown =
-    createAppPlugin("shatdown", ::Any) {
+    createAppPlugin("shutdown", ::Any) {
         ShutDown
     }
 
@@ -25,16 +26,14 @@ object ShutDown {
     }
 
     internal fun plan() {
-        val thread =
-            Thread({
-                for ((name, hook) in hooks) {
-                    hook.run()
-                    name?.let {
-                        logger.info("shutdown hook: $it")
-                    }
+        val thread = thread(start = false, name = "shutdown") {
+            for ((name, hook) in hooks) {
+                hook.run()
+                name?.let {
+                    logger.info("shutdown hook: $it")
                 }
-            }, "shutdown")
-
+            }
+        }
         Runtime.getRuntime().addShutdownHook(thread)
     }
 }
