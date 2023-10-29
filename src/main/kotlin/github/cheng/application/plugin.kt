@@ -12,6 +12,7 @@ data class AttributeKey(val key: String)
 
 interface Plugin<Config : Any, PluginT : Any> {
     val attributeKey: AttributeKey
+
     fun install(configuration: Config.() -> Unit): PluginT
 }
 
@@ -27,12 +28,12 @@ interface ApplicationPluginInstance<Config : Any, PluginT : Any> : ApplicationPl
 enum class Feature {
     Command,
     App,
-    BotDispatcher
+    BotDispatcher,
 }
 
-/*------------------------------------------BOT-----------------------------------------*/
+// ------------------------------------------BOT-----------------------------------------
 interface BotDispatcher {
-    val dispatch:Dispatcher.()->Unit
+    val dispatch: Dispatcher.() -> Unit
     val dispatcherName: String
     val description: String
 }

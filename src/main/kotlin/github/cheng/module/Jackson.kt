@@ -1,9 +1,9 @@
 package github.cheng.module
 
-import github.cheng.application.BotDSL
-import github.cheng.application.createAppPlugin
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import github.cheng.application.BotDSL
+import github.cheng.application.createAppPlugin
 
 /**
  *
@@ -12,11 +12,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
  * @doc
  **/
 
-val jackson = createAppPlugin("jackson", ::ObjectMapperConfig) { config ->
-    return@createAppPlugin ObjectMapper().apply<ObjectMapper> {
-        config.objectSettings.forEach { it() }
-    }.apply { logger().info("jackson is ready") }
-}
+val jackson =
+    createAppPlugin("jackson", ::ObjectMapperConfig) { config ->
+        return@createAppPlugin ObjectMapper().apply<ObjectMapper> {
+            config.objectSettings.forEach { it() }
+        }.apply { logger().info("jackson is ready") }
+    }
 
 typealias objSetting = ObjectMapper.() -> Unit
 
@@ -27,7 +28,6 @@ class ObjectMapperConfig {
     fun jacksonConfig(setting: objSetting) {
         objectSettings.add(setting)
     }
-
 }
 
 @BotDSL

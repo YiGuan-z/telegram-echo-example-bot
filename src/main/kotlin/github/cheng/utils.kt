@@ -25,18 +25,26 @@ inline fun <reified T : Any> setOnce(): ReadWriteProperty<Any?, T> = SetOnce()
 class SetOnce<T : Any> : ReadWriteProperty<Any?, T> {
     private var value: T? = null
     private var isSet = false
-    override fun getValue(thisRef: Any?, property: KProperty<*>): T {
+
+    override fun getValue(
+        thisRef: Any?,
+        property: KProperty<*>,
+    ): T {
         return value ?: throw IllegalStateException("Property $property has not been initialized")
     }
 
-    override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+    override fun setValue(
+        thisRef: Any?,
+        property: KProperty<*>,
+        value: T,
+    ) {
         if (isSet) throw IllegalStateException("Property $property has already been initialized")
         this.value = value
         isSet = true
     }
 }
 
-fun ByteBuffer.getByte(): ByteArray {
+internal fun ByteBuffer.getByte(): ByteArray {
     val byteArray = ByteArray(this.remaining())
     get(byteArray)
     return byteArray

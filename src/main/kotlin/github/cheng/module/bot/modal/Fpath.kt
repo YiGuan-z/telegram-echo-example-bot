@@ -12,7 +12,7 @@ import kotlin.io.path.createDirectories
 data class Fpath(
     val packPath: String,
     val srcPath: String,
-    val imgPath: String
+    val imgPath: String,
 ) {
     constructor(packpath: String) : this(packpath, "$packpath/src/", "$packpath/img/")
 

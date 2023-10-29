@@ -1,14 +1,14 @@
 package github.cheng.module.bot
 
-import github.cheng.application.BotDSL
-import github.cheng.application.BotDispatcher
-import github.cheng.application.createBotDispatcherModule
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.handlers.media.MediaHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.sticker
 import com.github.kotlintelegrambot.dispatcher.text
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.stickers.Sticker
+import github.cheng.application.BotDSL
+import github.cheng.application.BotDispatcher
+import github.cheng.application.createBotDispatcherModule
 import github.cheng.module.currentChatId
 import github.cheng.module.redis.RedisService
 import github.cheng.setOnce
@@ -25,8 +25,8 @@ class EchoChatHandler(config: ChatHandlerConfiguration) :
 
     override val dispatch: Dispatcher.() -> Unit = {
         text("echo") {
-            //或许可以抽象出一个责任链
-            //或者在全局做路由，反正这个带text参数的方法挺抽象的。
+            // 或许可以抽象出一个责任链
+            // 或者在全局做路由，反正这个带text参数的方法挺抽象的。
             val chatId = currentChatId()
             bot.sendMessage(chatId, "你好，我可以当一个复读机")
         }
@@ -50,14 +50,16 @@ fun MediaHandlerEnvironment<Sticker>.remoteSticker() = this.message.sticker?.fil
 open class ChatHandlerConfiguration {
     var redisService: RedisService by setOnce()
 }
+
 @BotDSL
 fun ChatHandlerConfiguration.setRedisService(redisService: RedisService) {
     this.redisService = redisService
 }
 
-val echoChatHandler = createBotDispatcherModule(
-    "echoChatHandler",
-    ::ChatHandlerConfiguration
-) { config ->
-    EchoChatHandler(config)
-}
+val echoChatHandler =
+    createBotDispatcherModule(
+        "echoChatHandler",
+        ::ChatHandlerConfiguration,
+    ) { config ->
+        EchoChatHandler(config)
+    }

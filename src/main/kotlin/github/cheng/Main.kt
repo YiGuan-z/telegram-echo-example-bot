@@ -13,12 +13,12 @@ import github.cheng.module.redis.RedisService
 import github.cheng.module.redis.jacksonRedisCodec
 import github.cheng.module.redis.redisFactory
 
-suspend fun main(args: Array<String>) = Application.main(args, TelegramBot, Application::configModule)
+fun main(args: Array<String>) = Application.main(args, TelegramBot, Application::configModule)
 
 fun Application.configModule() {
     OpenCVService.init()
     install(jackson) {
-        //忽略未知属性
+        // 忽略未知属性
         ignoreUnknownProperties(true)
     }
     install(i18n) {
@@ -64,6 +64,3 @@ fun Application.configurationBotModule() {
         setRedisService(redisService)
     }
 }
-
-
-

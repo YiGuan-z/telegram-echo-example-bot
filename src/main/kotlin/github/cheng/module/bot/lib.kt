@@ -13,6 +13,7 @@ import kotlin.io.path.pathString
  * @date 2023/10/15-21:45
  * @doc
  **/
+
 /**
  * 解析参数，将参数解析为Map
  */
@@ -34,7 +35,10 @@ fun Path.basename() = this.fileName.name
 
 fun String.suffix() = this.drop(this.lastIndexOf('.') + 1)
 
-fun copyFile(sourceFile: Path, destFile: Path) {
+fun copyFile(
+    sourceFile: Path,
+    destFile: Path,
+) {
     Files.createDirectories(destFile.parent)
 
     Files.copy(sourceFile, destFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)

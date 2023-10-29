@@ -8,6 +8,7 @@ import github.cheng.application.createBotDispatcherModule
 import github.cheng.module.bot.modal.ChatLangProfile
 import github.cheng.module.currentChatId
 import github.cheng.module.redis.RedisService
+
 /**
  *
  * @author caseycheng
@@ -30,7 +31,7 @@ class InitUserHandler(val redisService: RedisService, val defaultLang: String) :
 }
 
 class InitUserConfiguration : ChatHandlerConfiguration() {
-    //设置默认语言
+    // 设置默认语言
     lateinit var defaultLang: String
 }
 
@@ -38,6 +39,7 @@ fun InitUserConfiguration.setDefaultLang(lang: String) {
     this.defaultLang = lang
 }
 
-val initUserHandler = createBotDispatcherModule("initUser", ::InitUserConfiguration) {
-    InitUserHandler(it.redisService, it.defaultLang)
-}
+val initUserHandler =
+    createBotDispatcherModule("initUser", ::InitUserConfiguration) {
+        InitUserHandler(it.redisService, it.defaultLang)
+    }

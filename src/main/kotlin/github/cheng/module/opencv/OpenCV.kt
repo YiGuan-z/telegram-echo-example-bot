@@ -40,6 +40,7 @@ object OpenCVService {
     }
 
     private val logger = thisLogger<OpenCVService>()
+
     suspend fun bgr2rgb(path: String): Mat {
         return conversion(path, Imgproc.COLOR_BGR2RGB)
     }
@@ -54,7 +55,7 @@ object OpenCVService {
     suspend fun videoToGif(
         src: Path,
         savePath: Path,
-        frameSpeed: Int = 3
+        frameSpeed: Int = 3,
     ) {
         withContext(Dispatchers.Default) {
             try {
@@ -74,23 +75,11 @@ object OpenCVService {
                                     recorder.videoCodec = avcodec.AV_CODEC_ID_GIF
                                     recorder.pixelFormat = avutil.AV_PIX_FMT_RGB8
                                     recorder.start()
-
-                                    var frame: Frame?
-                                    do {
-                                        frame = grabber.grabImage()
-                                        frame?.let {
-                                            try {
-                                                (0..<frameSpeed).forEach { _ -> recorder.record(frame) }
-                                            } catch (_: Exception) {
-
-                                            }
-
-                                        }
-                                    } while (frame != null)
+                                    //帧写入
+                                    recorder.writeFrame(grabber, frameSpeed)
                                     grabber.stop()
                                 }
                         }
-
                 } else {
                     throw FileNotSupport("$src not is gif file")
                 }
@@ -98,9 +87,7 @@ object OpenCVService {
                 throw e
             }
         }
-
     }
-
 
     @Deprecated("这是一个废弃的方法，它没有将image和video分开，并且webp也不用转换")
     suspend fun conversionImageFile(
@@ -108,7 +95,7 @@ object OpenCVService {
         to: String,
         width: Double,
         height: Double,
-        scale: Double
+        scale: Double,
     ) {
         withContext(Dispatchers.IO) {
             val path = Path(path).toAbsolutePath().pathString
@@ -134,7 +121,10 @@ object OpenCVService {
         }
     }
 
-    suspend fun conversion(path: String, code: Int): Mat {
+    suspend fun conversion(
+        path: String,
+        code: Int,
+    ): Mat {
         val image: Mat
         val result = Mat()
         withContext(Dispatchers.IO) {
@@ -145,8 +135,21 @@ object OpenCVService {
         }
         return result
     }
-
-
 }
 
 class FileNotSupport(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
+
+private fun FFmpegFrameRecorder.writeFrame(grabber: FFmpegFrameGrabber, frameSleep: Int) {
+    use { recorder ->
+        var frame: Frame?
+        do {
+            frame = grabber.grabImage()
+            frame?.let {
+                try {
+                    (0..<frameSleep).forEach { _ -> recorder.record(frame) }
+                } catch (_: Throwable) {
+                }
+            }
+        } while (frame != null)
+    }
+}

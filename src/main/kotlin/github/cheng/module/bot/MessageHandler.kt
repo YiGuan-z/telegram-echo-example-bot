@@ -1,6 +1,5 @@
 package github.cheng.module.bot
 
-import github.cheng.TelegramResources
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
@@ -9,6 +8,7 @@ import com.github.kotlintelegrambot.entities.MessageEntity
 import com.github.kotlintelegrambot.entities.TelegramFile
 import com.github.kotlintelegrambot.entities.stickers.Sticker
 import com.github.kotlintelegrambot.entities.stickers.StickerSet
+import github.cheng.TelegramResources
 import github.cheng.application.*
 import github.cheng.module.bot.modal.Fpath
 import github.cheng.module.bot.modal.StickerCollectPack
@@ -31,11 +31,12 @@ import kotlin.io.path.name
  * @doc 对消息进行处理
  **/
 
-val messageHandler = createBotDispatcherModule("messageHandler", ::MessageHandlerConfiguration) { config ->
-    val redisService = requireNotNull(config.redisService) { "redisService is null" }
-    val i18nPacks = requireNotNull(config.i18nPacks) { "i18nPacks is null" }
-    MessageHandler(redisService, i18nPacks)
-}
+val messageHandler =
+    createBotDispatcherModule("messageHandler", ::MessageHandlerConfiguration) { config ->
+        val redisService = requireNotNull(config.redisService) { "redisService is null" }
+        val i18nPacks = requireNotNull(config.i18nPacks) { "i18nPacks is null" }
+        MessageHandler(redisService, i18nPacks)
+    }
 
 class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) : BotDispatcher {
     @JvmField
@@ -46,7 +47,7 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
             if (message.chat.type != "private") return@message
             val chatId = currentChatId()
             logger.info("receive message from ${message.chat.id}")
-            //前面有一层[InitUserHandler]在创建语言配置，所以这里是不会为空的。
+            // 前面有一层[InitUserHandler]在创建语言配置，所以这里是不会为空的。
             val langProfile = redisService.currentChatLangProfile(chatId)!!
             val languagePack = i18nPacks.get(langProfile.lang)
             try {
@@ -61,16 +62,17 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                             if (messageEntity.type == MessageEntity.Type.URL) {
                                 val url =
                                     message.text!!.slice(messageEntity.offset..<messageEntity.offset + messageEntity.length)
-                                val legalSource = run {
-                                    val find = TelegramResources.stickerSources.find { url.startsWith(it) }
-                                    find != null
-                                }
+                                val legalSource =
+                                    run {
+                                        val find = TelegramResources.stickerSources.find { url.startsWith(it) }
+                                        find != null
+                                    }
                                 if (legalSource && url.length > 25) {
                                     stickerSetHandler(languagePack, Path(url).fileName.name)
                                 } else {
                                     bot.sendMessage(
                                         chatId,
-                                        languagePack.getString("sticker.unsupported_sticker_source", "source", url)
+                                        languagePack.getString("sticker.unsupported_sticker_source", "source", url),
                                     )
                                 }
                             }
@@ -91,7 +93,6 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                             bot.sendMessage(chatId, languagePack.getString("newpack.tasklocked"))
                         }
                     }
-
                 }
             } catch (e: RuntimeException) {
                 bot.sendMessage(chatId, languagePack.getString("error.user_prompt"))
@@ -99,15 +100,17 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
         }
     }
 
-
-    private suspend fun MessageHandlerEnvironment.addSticker(languagePack: LanguagePack, sticker: Sticker) {
+    private suspend fun MessageHandlerEnvironment.addSticker(
+        languagePack: LanguagePack,
+        sticker: Sticker,
+    ) {
         val chatId = currentChatId()
         val currentPack = redisService.getCurrentPack(chatId)!!
         if (currentPack.files.contains(message.sticker?.fileId)) {
             bot.sendMessage(
                 chatId,
                 languagePack.getString("sticker.duplicated_sticker"),
-                replyToMessageId = message.messageId
+                replyToMessageId = message.messageId,
             )
             return
         }
@@ -120,15 +123,19 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
         val files = currentPack.files.toMutableSet().apply { add(sticker.fileId) }
         redisService.setCurrentPack(chatId, currentPack.copy(files = files))
         val remain = TelegramResources.maxImages - files.size
-        val message = if (remain != 0) {
-            languagePack.getString("sticker.saved", "remain", remain.toString())
-        } else {
-            languagePack.getString("sticker.taskfull")
-        }
+        val message =
+            if (remain != 0) {
+                languagePack.getString("sticker.saved", "remain", remain.toString())
+            } else {
+                languagePack.getString("sticker.taskfull")
+            }
         bot.sendMessage(chatId, message)
     }
 
-    private suspend fun MessageHandlerEnvironment.stickerSetHandler(languagePack: LanguagePack, setName: String) {
+    private suspend fun MessageHandlerEnvironment.stickerSetHandler(
+        languagePack: LanguagePack,
+        setName: String,
+    ) {
         val chatId = currentChatId()
         val currentPack = redisService.getCurrentPack(chatId)!!
         bot.sendMessage(chatId, languagePack.getString("sticker.get_set_info"))
@@ -142,8 +149,8 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                     languagePack.getString(
                         "newpack.taskexceed",
                         "count" to currentPack.files.size.toString(),
-                        "max" to TelegramResources.maxImages.toString()
-                    )
+                        "max" to TelegramResources.maxImages.toString(),
+                    ),
                 )
                 return
             }
@@ -157,7 +164,7 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                     "sticker.set_added_count",
                     "sticker_count" to originCount.toString(),
                     "count" to (TelegramResources.maxImages - originCount).toString(),
-                )
+                ),
             )
             return
         } catch (e: RuntimeException) {
@@ -167,7 +174,10 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
         }
     }
 
-    private fun addSet(collectPack: StickerCollectPack, set: StickerSet): StickerCollectPack {
+    private fun addSet(
+        collectPack: StickerCollectPack,
+        set: StickerSet,
+    ): StickerCollectPack {
         val files = collectPack.files.toMutableSet()
         set.stickers.forEach { sticker ->
             if (!files.contains(sticker.fileId)) {
@@ -192,66 +202,67 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
                     val pendingMsg =
                         bot.sendMessage(chatId, languagePack.getString("sticker.direct_task_started")).get()
                     val fileUrl = resolveFile(message.sticker!!.fileId, messageId, languagePack)
-                    val job0 = async(Dispatchers.IO) {
-                        try {
-                            download(fileUrl, fpath.srcPath + Path(fileUrl).basename())
-                        } catch (e: Exception) {
-                            logger.error("[finish command] download file failed: $fileUrl")
-                            bot.sendMessage(currentChatId(), languagePack.getString("error.download_error"))
-                            throw e
-                        }
-                    }
-                    //转换
-                    //俺寻思 webp可以不用转换
-                    val job1 = async(Dispatchers.IO) {
-                        val destPath = job0.await()
-                        try {
-                            if (destPath.lastIndexOf('.') != -1) {
-                                val suffix = destPath.suffix()
-                                val srcPath = Path(destPath)
-                                val destPath = fpath.imgPath + srcPath.basename()
-                                val file = when (suffix) {
-                                    "webp" -> {
-                                        copyFile(srcPath, Path(destPath))
-                                        destPath
-                                    }
-
-                                    "webm" -> {
-                                        val destPath = destPath.removeSuffix("webm") + "gif"
-                                        val dest = Path(destPath)
-                                        OpenCVService.videoToGif(srcPath, dest)
-                                        destPath
-                                    }
-
-                                    else -> throw RuntimeException()
-                                }
-                                return@async file
+                    val job0 =
+                        async(Dispatchers.IO) {
+                            try {
+                                download(fileUrl, fpath.srcPath + Path(fileUrl).basename())
+                            } catch (e: Exception) {
+                                logger.error("[finish command] download file failed: $fileUrl")
+                                bot.sendMessage(currentChatId(), languagePack.getString("error.download_error"))
+                                throw e
                             }
-                            throw RuntimeException()
-                        } catch (e: Exception) {
-                            logger.error("[Message Handler] chat ${chatId.id} convert error")
-                            bot.sendMessage(chatId, languagePack.getString("error.convert_error"))
-                            throw RuntimeException(e)
                         }
-                    }
+                    // 转换
+                    // 俺寻思 webp可以不用转换
+                    val job1 =
+                        async(Dispatchers.IO) {
+                            val destPath = job0.await()
+                            try {
+                                if (destPath.lastIndexOf('.') != -1) {
+                                    val suffix = destPath.suffix()
+                                    val srcPath = Path(destPath)
+                                    val destPath = fpath.imgPath + srcPath.basename()
+                                    val file =
+                                        when (suffix) {
+                                            "webp" -> {
+                                                copyFile(srcPath, Path(destPath))
+                                                destPath
+                                            }
+
+                                            "webm" -> {
+                                                val destPath = destPath.removeSuffix("webm") + "gif"
+                                                val dest = Path(destPath)
+                                                OpenCVService.videoToGif(srcPath, dest)
+                                                destPath
+                                            }
+
+                                            else -> throw RuntimeException()
+                                        }
+                                    return@async file
+                                }
+                                throw RuntimeException()
+                            } catch (e: Exception) {
+                                logger.error("[Message Handler] chat ${chatId.id} convert error")
+                                bot.sendMessage(chatId, languagePack.getString("error.convert_error"))
+                                throw RuntimeException(e)
+                            }
+                        }
                     launch(Dispatchers.IO) {
                         val photo = job1.await()
                         bot.sendDocument(
                             chatId,
                             document = TelegramFile.ByFile(Path(photo).toFile()),
-                            replyToMessageId = messageId
+                            replyToMessageId = messageId,
                         )
                         bot.deleteMessage(chatId, pendingMsg.messageId)
                         cleanup(chatId)
                     }
-
                 }
             }
         } catch (e: RuntimeException) {
             logger.info("[Message Handler] chat ${chatId.id} failed direct image task. cleaning up...")
             cleanup(chatId)
         }
-
     }
 
     private suspend fun MessageHandlerEnvironment.newPackHandler(): StickerCollectPack {
@@ -265,9 +276,9 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
     private suspend fun MessageHandlerEnvironment.resolveFile(
         fileIds: String,
         inreplyTo: Long?,
-        langPack: LanguagePack
+        langPack: LanguagePack,
     ): String/*file path url*/ {
-        //不要在意这是胶水代码，谁让这一堆Environment都没有什么继承关系呢。
+        // 不要在意这是胶水代码，谁让这一堆Environment都没有什么继承关系呢。
         val chatId = currentChatId()
         return withContext(Dispatchers.IO) {
             try {
@@ -280,7 +291,6 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
             }
         }
     }
-
 
     private suspend fun MessageHandlerEnvironment.download(
         url: String,
@@ -301,7 +311,6 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
         } catch (e: Exception) {
             throw e
         }
-
     }
 
     private suspend fun MessageHandlerEnvironment.videoToGif(
@@ -311,14 +320,15 @@ class MessageHandler(val redisService: RedisService, val i18nPacks: I18nPacks) :
     ): String {
         val chatId = currentChatId()
         val imgpath = fpath.imgPath
-        val fileName = Path(srcPath).fileName.name.let {
-            if (it.lastIndexOf('.') != -1) {
-                it.substring(0, it.lastIndexOf('.'))
-            } else {
-                it
+        val fileName =
+            Path(srcPath).fileName.name.let {
+                if (it.lastIndexOf('.') != -1) {
+                    it.substring(0, it.lastIndexOf('.'))
+                } else {
+                    it
+                }
             }
-        }
-        //构建新文件路径和文件扩展名
+        // 构建新文件路径和文件扩展名
         val newImgPath = "$imgpath$fileName.$extension"
         withContext(Dispatchers.IO) {
             OpenCVService.videoToGif(Path(srcPath), Path(newImgPath))

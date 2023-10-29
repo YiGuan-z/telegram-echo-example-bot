@@ -1,9 +1,9 @@
 package github.cheng.module.bot
 
+import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import github.cheng.application.BotDSL
 import github.cheng.application.BotDispatcher
 import github.cheng.application.createBotDispatcherModule
-import com.github.kotlintelegrambot.dispatcher.Dispatcher
 
 /**
  *
@@ -11,9 +11,10 @@ import com.github.kotlintelegrambot.dispatcher.Dispatcher
  * @date 2023/10/15-14:16
  * @doc 这里存放所有管理员的命令
  **/
-val adminCommands = createBotDispatcherModule("adminCommands", ::AdminCommandsConfiguration) {
-    AdminCommands()
-}
+val adminCommands =
+    createBotDispatcherModule("adminCommands", ::AdminCommandsConfiguration) {
+        AdminCommands()
+    }
 
 @BotDSL
 class AdminCommandsConfiguration {
@@ -24,7 +25,6 @@ class AdminCommandsConfiguration {
 fun AdminCommandsConfiguration.setAdminUsername(username: String) {
     this.adminUser = username
 }
-
 
 class AdminCommands : BotDispatcher {
     // start server

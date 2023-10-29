@@ -1,10 +1,10 @@
 package github.cheng.module.redis
 
-import github.cheng.application.createAppPlugin
 import com.fasterxml.jackson.databind.ObjectMapper
+import github.cheng.application.createAppPlugin
 import github.cheng.getByte
-import io.lettuce.core.codec.RedisCodec
 import github.cheng.setOnce
+import io.lettuce.core.codec.RedisCodec
 import java.nio.ByteBuffer
 
 /**
@@ -31,10 +31,9 @@ class JacksonRedisCodec(config: JacksonRedisCodecConfig) : RedisCodec<String, An
     override fun encodeValue(value: Any): ByteBuffer {
         return ByteBuffer.wrap(mapper.writeValueAsBytes(value))
     }
-
 }
 
-//@BotDSL
+// @BotDSL
 class JacksonRedisCodecConfig {
     var mapper: ObjectMapper by setOnce()
 }
@@ -43,9 +42,10 @@ fun JacksonRedisCodecConfig.mapper(block: () -> ObjectMapper) {
     this.mapper = block()
 }
 
-val jacksonRedisCodec = createAppPlugin(
-    "jacksonRedisCodec",
-    ::JacksonRedisCodecConfig
-) { config ->
-    return@createAppPlugin JacksonRedisCodec(config)
-}
+val jacksonRedisCodec =
+    createAppPlugin(
+        "jacksonRedisCodec",
+        ::JacksonRedisCodecConfig,
+    ) { config ->
+        return@createAppPlugin JacksonRedisCodec(config)
+    }

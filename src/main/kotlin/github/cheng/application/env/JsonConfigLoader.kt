@@ -33,11 +33,10 @@ class JsonConfig : ApplicationConfig {
     }
 
     fun checkConfig() {
-        //检查里面的值是否都能成功获取到。
-        //因为toMap里面有着这些逻辑，所以直接使用toMap的逻辑即可。resolveValue中有对异常进行提示。
+        // 检查里面的值是否都能成功获取到。
+        // 因为toMap里面有着这些逻辑，所以直接使用toMap的逻辑即可。resolveValue中有对异常进行提示。
         toMap()
     }
-
 
     override fun property(path: String): ApplicationConfigValue {
         return propertyOrNull(path) ?: throw ApplicationConfigurationException("Property $path not found")
@@ -45,22 +44,25 @@ class JsonConfig : ApplicationConfig {
 
     override fun propertyOrNull(path: String): ApplicationConfigValue? {
         val paths = path.split('.')
-        val map = paths.dropLast(1).fold(conf) { data, pat ->
-            @Suppress("unchecked_cast")
-            data[pat] as? Map<String, Any> ?: return null
-        }
+        val map =
+            paths.dropLast(1).fold(conf) { data, pat ->
+                @Suppress("unchecked_cast")
+                data[pat] as? Map<String, Any> ?: return null
+            }
         val value = map[paths.last()] ?: return null
         return when (value) {
             is String -> resolveValue(value, root)?.let { JsonLiteralValue(path, it) }
             is Int -> resolveValue(value.toString(), root)?.let { JsonLiteralValue(path, it) }
             is List<*> -> {
-                //String int
-                val list = value.mapNotNullTo(arrayListOf()) {
-                    if (it != null)
-                        resolveValue(it.toString(), root)
-                    else
-                        null
-                }
+                // String int
+                val list =
+                    value.mapNotNullTo(arrayListOf()) {
+                        if (it != null) {
+                            resolveValue(it.toString(), root)
+                        } else {
+                            null
+                        }
+                    }
                 return JsonListValue(path, list)
             }
 
@@ -70,27 +72,30 @@ class JsonConfig : ApplicationConfig {
 
     override fun config(path: String): ApplicationConfig {
         val parts = path.split('.')
-        val jsonConf = parts.fold(conf) { map, part ->
-            @Suppress("unchecked_cast")
-            map[part] as? Map<String, Any>
-                ?: throw ApplicationConfigurationException("$part is not a valid config path")
-        }
+        val jsonConf =
+            parts.fold(conf) { map, part ->
+                @Suppress("unchecked_cast")
+                map[part] as? Map<String, Any>
+                    ?: throw ApplicationConfigurationException("$part is not a valid config path")
+            }
         return JsonConfig(jsonConf, root)
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun configList(path: String): List<ApplicationConfig> {
         val parts = path.split('.')
-        val conf = parts.dropLast(1).fold(conf) { map, pat ->
-            map[pat] as? Map<String, Any> ?: throw ApplicationConfigurationException("$pat is not found")
-        }
+        val conf =
+            parts.dropLast(1).fold(conf) { map, pat ->
+                map[pat] as? Map<String, Any> ?: throw ApplicationConfigurationException("$pat is not found")
+            }
 
-        val values = conf[parts.last()] as? Map<String, Any>
-            ?: throw ApplicationConfigurationException("$parts.last() is not a map")
+        val values =
+            conf[parts.last()] as? Map<String, Any>
+                ?: throw ApplicationConfigurationException("$parts.last() is not a map")
         return values.map { (_, value) ->
             JsonConfig(
                 value as? Map<String, Any> ?: throw ApplicationConfigurationException("$value is not a map"),
-                root
+                root,
             )
         }
     }
@@ -110,16 +115,17 @@ class JsonConfig : ApplicationConfig {
 
     @Suppress("unchecked_cast")
     override fun toMap(): Map<String, Any?> {
-        fun toPrimitive(element: Any?): Any? = when (element) {
-            is List<*> -> element.map { toPrimitive(it) }
-            is Map<*, *> -> {
-                element as Map<String, Any>
-                element.keys.associateWith { toPrimitive(element[it]) }
-            }
+        fun toPrimitive(element: Any?): Any? =
+            when (element) {
+                is List<*> -> element.map { toPrimitive(it) }
+                is Map<*, *> -> {
+                    element as Map<String, Any>
+                    element.keys.associateWith { toPrimitive(element[it]) }
+                }
 
-            is String -> resolveValue(element, root)
-            else -> null
-        }
+                is String -> resolveValue(element, root)
+                else -> null
+            }
 
         val primitive = toPrimitive(conf)
         return primitive as? Map<String, Any?> ?: throw IllegalArgumentException("Top level element is not a map")
@@ -127,7 +133,7 @@ class JsonConfig : ApplicationConfig {
 
     internal class JsonListValue(
         private val key: String,
-        private val values: List<String>
+        private val values: List<String>,
     ) : ApplicationConfigValue {
         override fun getString(): String {
             throw ApplicationConfigurationException("Can't from $key get a string from a list")
@@ -138,7 +144,7 @@ class JsonConfig : ApplicationConfig {
 
     internal class JsonLiteralValue(
         private val key: String,
-        private val value: String
+        private val value: String,
     ) : ApplicationConfigValue {
         override fun getString(): String = value
 
@@ -148,13 +154,13 @@ class JsonConfig : ApplicationConfig {
     }
 }
 
-
 fun JsonConfig(path: String?): JsonConfig? {
-    val resolverPath = when {
-        path == null -> DEFAULT_JSON_FILE
-        path.endsWith(".json") -> path
-        else -> return null
-    }
+    val resolverPath =
+        when {
+            path == null -> DEFAULT_JSON_FILE
+            path.endsWith(".json") -> path
+            else -> return null
+        }
 
     val resource = Thread.currentThread().contextClassLoader.getResource(resolverPath)
     if (resource != null) {
@@ -171,10 +177,8 @@ fun JsonConfig(path: String?): JsonConfig? {
     }
 }
 
-fun configFormJson(jsonText: String): JsonConfig {
+private fun configFormJson(jsonText: String): JsonConfig {
     val mapper = ObjectMapper()
     val map = mapper.readValue<Map<String, Any>>(jsonText)
-    // map int string
-    thisLogger<JsonConfig>().info("json data is: \n {}", map)
     return JsonConfig(map)
 }

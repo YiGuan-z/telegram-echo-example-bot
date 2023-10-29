@@ -12,5 +12,7 @@ import com.github.kotlintelegrambot.entities.ChatId
  * @doc
  **/
 fun TextHandlerEnvironment.currentChatId() = ChatId.fromId(message.chat.id)
+
 fun CommandHandlerEnvironment.currentChatId() = ChatId.fromId(message.chat.id)
+
 fun MessageHandlerEnvironment.currentChatId() = ChatId.fromId(message.chat.id)

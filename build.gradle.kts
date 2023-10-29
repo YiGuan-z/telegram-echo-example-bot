@@ -41,17 +41,17 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.9")
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
     implementation("ch.qos.logback:logback-classic:1.4.11")
-    //https://github.com/coil-kt/coil/blob/main/README-zh.md
-    //implementation("io.coil-kt:coil:2.4.0")
-    //https://github.com/bytedeco/javacv
-    //coil is android library, but running on the server
+    // https://github.com/coil-kt/coil/blob/main/README-zh.md
+    // implementation("io.coil-kt:coil:2.4.0")
+    // https://github.com/bytedeco/javacv
+    // coil is android library, but running on the server
 //    implementation("org.bytedeco:javacv-platform:1.5.9")
 
-    //https://github.com/bytedeco/javacv/issues/2087 upgrade opencv 480
+    // https://github.com/bytedeco/javacv/issues/2087 upgrade opencv 480
     implementation("org.bytedeco:javacv-platform:1.5.10-SNAPSHOT")
 
 //    implementation("com.groupdocs:groupdocs-conversion:23.10")
-    //https://github.com/Him188/yamlkt
+    // https://github.com/Him188/yamlkt
     implementation("net.mamoe.yamlkt:yamlkt:0.13.0")
 
     implementation("io.lettuce:lettuce-core:6.2.6.RELEASE")
@@ -71,7 +71,7 @@ kotlin {
 }
 
 application {
-    mainClass.set("MainKt")
+    mainClass.set("github.cheng.MainKt")
 }
 
 tasks {
@@ -79,7 +79,7 @@ tasks {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE // allow duplicates
         // Otherwise you'll get a "No main manifest attribute" error
         manifest {
-            attributes["Main-Class"] = "MainKt"
+            attributes["Main-Class"] = "github.cheng.MainKt"
         }
 
         // To add all of the dependencies otherwise a "NoClassDefFoundError" error
@@ -99,18 +99,17 @@ tasks {
             freeCompilerArgs += "-Xcontext-receivers"
 //            jvmTarget = "8"
         }
-        configureEach{
+        configureEach {
             compilerOptions
                 .languageVersion.set(KotlinVersion.KOTLIN_2_0)
         }
-
     }
 }
 
 @OptIn(ExperimentalPathApi::class)
 task("updateI18n") {
-    //删除resources下的i8n.zip
-    //压缩i18n文件夹下的内容为一个压缩包 并输出到它的父路径也就是resource下。
+    // 删除resources下的i8n.zip
+    // 压缩i18n文件夹下的内容为一个压缩包 并输出到它的父路径也就是resource下。
     Files.deleteIfExists(Path("./src/main/resources/i18n.zip"))
     Path("./temp").deleteRecursively()
     Files.deleteIfExists(Path("./temp"))

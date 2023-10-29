@@ -22,6 +22,4 @@ fun Application.mkdirImageFinder() {
         logger.info("[internal] File storage not found, creating...")
         Files.createDirectories(fsPath)
     }
-
-
 }

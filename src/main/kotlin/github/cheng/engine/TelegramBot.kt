@@ -1,5 +1,6 @@
 package github.cheng.engine
 
+import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.logging.LogLevel
 import github.cheng.TelegramResources
@@ -10,23 +11,26 @@ import github.cheng.application.env.getStringOrNull
 import github.cheng.module.bot.bot
 import github.cheng.module.mkdirImageFinder
 import github.cheng.module.thisLogger
+import github.cheng.setOnce
 
 object TelegramBot : ApplicationEngine {
-    override fun create(application: Application): Application {
+    internal var botInstance: Bot by setOnce()
+
+    override fun create(application: Application) {
         with(application) {
             configGlobalResource()
             mkdirImageFinder()
             configBot()
+            botInstance = application.instance(bot)
         }
-        return application
     }
 
-    override fun Application.start() {
-        instance(bot).startPolling().also { thisLogger<Application>().info("机器人已启动") }
+    override fun start() {
+        botInstance.startPolling().also { thisLogger<Application>().info("机器人已启动") }
     }
 
-    override fun Application.stop() {
-        instance(bot).stopPolling()
+    override fun stop() {
+        botInstance.stopPolling()
     }
 }
 
@@ -49,7 +53,8 @@ private fun configGlobalResource() {
     }
 }
 
-private fun Application.configBot() {
+context (Application)
+private fun configBot() {
     install(bot) {
         token = appEnvironment.config("bot").property("tg_token").getString()
         logLevel = LogLevel.Error

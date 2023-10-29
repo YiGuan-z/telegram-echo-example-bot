@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit
  * @doc
  **/
 class RedisService(val client: RedisAsyncCommands<String, Any>, val objMapper: ObjectMapper) {
-
     suspend inline fun <reified T : Any> get(path: String): T? {
         val data = client.get(path).await()
         return if (data == null) {
@@ -22,12 +21,15 @@ class RedisService(val client: RedisAsyncCommands<String, Any>, val objMapper: O
         }
     }
 
-    suspend inline fun <reified T : Any> set(path: String, value: T): Boolean {
+    suspend inline fun <reified T : Any> set(
+        path: String,
+        value: T,
+    ): Boolean {
         val res = client.set(path, value).await()
         return res == "OK"
     }
 
-    suspend fun remove(path:String){
+    suspend fun remove(path: String) {
         client.del(path).await()
     }
 
@@ -49,19 +51,17 @@ class RedisService(val client: RedisAsyncCommands<String, Any>, val objMapper: O
                 path,
                 objMapper.convertValue(data, jacksonTypeRef()),
                 ttl,
-                TimeUnit.SECONDS
+                TimeUnit.SECONDS,
             )
         }
     }
-
-
 }
 
 fun <T : Any> redisEntryBuilder(
     key: String,
     value: T?,
     exprTime: Long = -1,
-    unit: TimeUnit = TimeUnit.MINUTES
+    unit: TimeUnit = TimeUnit.MINUTES,
 ): RedisEntry<T> {
     return RedisEntry(key, value, exprTime, unit)
 }
@@ -70,7 +70,7 @@ class RedisEntry<T : Any>(
     val key: String,
     val value: T?,
     val exprTime: Long = -1,
-    val unit: TimeUnit = TimeUnit.MINUTES
+    val unit: TimeUnit = TimeUnit.MINUTES,
 ) {
     companion object {
         @JvmStatic
@@ -84,4 +84,3 @@ class RedisEntry<T : Any>(
         fun isEmpty(entry: RedisEntry<*>): Boolean = entry === EMPTY
     }
 }
-

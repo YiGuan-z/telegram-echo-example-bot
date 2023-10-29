@@ -11,5 +11,5 @@ import github.cheng.application.Language
  **/
 data class ChatLangProfile(
     val chatId: Long = -1,
-    val lang: Language = Language.of(TelegramResources.defaultLang)
+    val lang: Language = Language.of(TelegramResources.defaultLang),
 )
