@@ -14,7 +14,7 @@ data class Fpath(
     val srcPath: String,
     val imgPath: String,
 ) {
-    constructor(packpath: String) : this(packpath, "$packpath/src/", "$packpath/img/")
+    constructor(packPath: String) : this(packPath, "$packPath/src/", "$packPath/img/")
 
     fun mkdirFinder() {
         Path(packPath).toAbsolutePath().createDirectories()

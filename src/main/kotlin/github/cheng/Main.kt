@@ -1,28 +1,27 @@
 package github.cheng
 
 import github.cheng.application.Application
-import github.cheng.application.getJsonFiles
+import github.cheng.application.getJsonLanguageFiles
 import github.cheng.application.i18n
 import github.cheng.engine.TelegramBot
 import github.cheng.module.bot.*
 import github.cheng.module.ignoreUnknownProperties
 import github.cheng.module.jackson
-import github.cheng.module.opencv.OpenCVService
 import github.cheng.module.redis.RedisFactory
 import github.cheng.module.redis.RedisService
 import github.cheng.module.redis.jacksonRedisCodec
 import github.cheng.module.redis.redisFactory
+import kotlinx.coroutines.delay
 
 fun main(args: Array<String>) = Application.main(args, TelegramBot, Application::configModule)
 
 fun Application.configModule() {
-    OpenCVService.init()
     install(jackson) {
         // 忽略未知属性
         ignoreUnknownProperties(true)
     }
     install(i18n) {
-        generateLanguages = { getJsonFiles() }
+        generateLanguages = { getJsonLanguageFiles() }
     }
     configurationRedis()
     configurationBotModule()

@@ -16,24 +16,36 @@ import github.cheng.setOnce
 object TelegramBot : ApplicationEngine {
     @Suppress("MemberVisibilityCanBePrivate")
     internal var botInstance: Bot by setOnce()
+    @PublishedApi
+    internal var application:Application by setOnce()
 
     override fun create(application: Application) {
+        this.application = application
         with(application) {
             configGlobalResource()
             mkdirImageFinder()
             configBot()
-            botInstance = application.instance(bot)
         }
+        botInstance = application.instance(bot)
     }
 
     override fun start() {
-        botInstance.startPolling().also { thisLogger<Application>().info("机器人已启动") }
+        botInstance.startPolling().also {
+            val logger = thisLogger<Application>()
+            val botAccount = botInstance.getMe().getOrNull()
+                ?: throw TelegramBotTokenError("get bot account failed, please check bot token or network")
+            botAccount.toString()
+            logger.info("机器人已启动")
+            logger.info("机器人账号信息: $botAccount")
+        }
     }
 
     override fun stop() {
         botInstance.stopPolling()
     }
 }
+
+class TelegramBotTokenError(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
 
 context (Application)
 private fun configGlobalResource() {

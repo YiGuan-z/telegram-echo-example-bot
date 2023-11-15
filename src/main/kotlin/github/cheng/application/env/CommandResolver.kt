@@ -11,7 +11,7 @@ import kotlin.reflect.KProperty
  * @doc
  **/
 @JvmField
-val argsCache: MutableMap<Int, Map<String, String>> = mutableMapOf()
+val argsCache: LRUCache<Int, Map<String, String>> = LRUCache()
 
 fun commandArgs(args: Array<String>): CommandArgs = CommandArgsImpl(args)
 
@@ -47,4 +47,17 @@ internal class CommandArgsImplForKey(
         val cache = getCache(args)
         return cache[key] ?: throw IllegalArgumentException("$key is not a valid argument")
     }
+}
+
+class LRUCache<K, V>(
+    @Suppress("MemberVisibilityCanBePrivate")
+    var maxEntries: Int = 100
+) : LinkedHashMap<K, V>() {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>): Boolean {
+        return size > maxEntries
+    }
+}
+
+fun <K : Any, V : Any> LRUCache<K, V>.setMapEntries(max: Int) {
+    maxEntries = max
 }

@@ -7,8 +7,10 @@ import github.cheng.application.env.MapApplicationConfig
 import github.cheng.application.env.mergeWith
 import github.cheng.module.shutdown
 import github.cheng.module.thisLogger
-import kotlinx.coroutines.flow.channelFlow
 import org.slf4j.Logger
+import reactor.core.publisher.toMono
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 /**
  *
@@ -17,14 +19,17 @@ import org.slf4j.Logger
  * @doc
  **/
 @BotDSL
-class Application(applicationConfig: ApplicationConfig) {
+class Application(applicationConfig: ApplicationConfig) : ApplicationProvider {
     @JvmField
+    @PublishedApi
     internal val appPlugins: MutableMap<AttributeKey, Any> = linkedMapOf()
 
     @JvmField
+    @PublishedApi
     internal val commandPlugins: MutableMap<AttributeKey, Any> = linkedMapOf()
 
     @JvmField
+    @PublishedApi
     internal val botDispatcherModules: MutableMap<AttributeKey, BotDispatcher> = linkedMapOf()
 
     @JvmField
@@ -58,14 +63,14 @@ class Application(applicationConfig: ApplicationConfig) {
     }
 
     @BotDSL
-    fun <Config : Any, PluginA : Any> instance(pluginProvider: ApplicationPluginInstance<Config, PluginA>): PluginA {
+    override fun <Config : Any, PluginA : Any> instance(pluginProvider: ApplicationPluginInstance<Config, PluginA>): PluginA {
         val attributeKey = pluginProvider.attributeKey
         val feature = pluginProvider.feature
         return instance(feature, attributeKey)
     }
 
     @BotDSL
-    fun <PluginA> instance(
+    override fun <PluginA> instance(
         feature: Feature,
         attributeKey: AttributeKey,
     ): PluginA {
@@ -76,10 +81,26 @@ class Application(applicationConfig: ApplicationConfig) {
         }
     }
 
+    override fun <ConfigT : Any, PluginT : Any> instanceDelegation(
+        pluginProvider: ApplicationPluginInstance<ConfigT, PluginT>
+    ): ReadOnlyProperty<Any?, PluginT> = InstanceImpl(pluginProvider)
+
+    internal inner class InstanceImpl<ConfigT : Any, PluginT : Any> internal constructor(
+        private val pluginProvider: ApplicationPluginInstance<ConfigT, PluginT>
+    ) :
+        ReadOnlyProperty<Any?, PluginT> {
+
+        private val cacheInstance: PluginT by lazy { instance(pluginProvider) }
+
+        override fun getValue(thisRef: Any?, property: KProperty<*>): PluginT {
+            return cacheInstance
+        }
+    }
+
     /**
      * 获取一个类型的所有实例
      */
-    fun <TypeA> instances(type: Class<TypeA>): List<TypeA> {
+    override fun <TypeA> instances(type: Class<TypeA>): List<TypeA> {
         return buildList {
             addAll(appPlugins.values)
             addAll(commandPlugins.values)
@@ -93,19 +114,6 @@ class Application(applicationConfig: ApplicationConfig) {
     @BotDSL
     fun <ConfigT : Any, PluginA : Any> installAndInstance(pluginProvider: ApplicationPluginInstance<ConfigT, PluginA>): PluginA {
         return runCatching { instance(pluginProvider) }.getOrNull() ?: install(pluginProvider)
-    }
-
-    /**
-     * 检查是否已安装
-     */
-    @BotDSL
-    fun <ConfigT : Any, PluginA : Any> checkInstall(pluginProvider: ApplicationPluginInstance<ConfigT, PluginA>): Boolean {
-        return try {
-            instance(pluginProvider)
-            true
-        } catch (ignore: Exception) {
-            false
-        }
     }
 
     private fun <V : Any> putPlugin(
@@ -134,6 +142,7 @@ class Application(applicationConfig: ApplicationConfig) {
     }
 
     companion object {
+        @JvmStatic
         fun main(
             args: Array<String>,
             engine: ApplicationEngine,
@@ -159,6 +168,9 @@ class Application(applicationConfig: ApplicationConfig) {
         }
     }
 }
+
+context (Application)
+fun Application.toApplicationProvider() = this as ApplicationProvider
 
 context (Application)
 private fun initShutdownHook() {
@@ -245,4 +257,25 @@ interface ApplicationEngine {
     fun start()
 
     fun stop()
+}
+
+interface ApplicationProvider {
+    fun <Config : Any, PluginA : Any> instance(pluginProvider: ApplicationPluginInstance<Config, PluginA>): PluginA
+
+    fun <PluginA> instance(feature: Feature, attributeKey: AttributeKey): PluginA
+
+    fun <ConfigT : Any, PluginT : Any> instanceDelegation(
+        pluginProvider: ApplicationPluginInstance<ConfigT, PluginT>
+    ): ReadOnlyProperty<Any?, PluginT>
+
+    fun <TypeA> instances(type: Class<TypeA>): List<TypeA>
+
+    fun <ConfigT : Any, PluginA : Any> checkInstall(pluginProvider: ApplicationPluginInstance<ConfigT, PluginA>): Boolean {
+        return try {
+            instance(pluginProvider)
+            true
+        } catch (ignore: Exception) {
+            false
+        }
+    }
 }

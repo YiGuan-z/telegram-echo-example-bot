@@ -13,6 +13,7 @@ import github.cheng.module.currentChatId
 import github.cheng.module.opencv.OpenCVService
 import github.cheng.module.redis.RedisService
 import github.cheng.module.thisLogger
+import github.cheng.packingZip
 import kotlinx.coroutines.*
 import java.io.FileOutputStream
 import java.nio.file.Files
@@ -69,9 +70,9 @@ class NewPackCommand(
     }
 
     private fun Dispatcher.newPackCommand() {
-        command("newpack") {
+        privateCommand("newpack") {
             val chatId = currentChatId()
-            val langProfile = redisService.currentChatLangProfile(chatId) ?: return@command
+            val langProfile = redisService.currentChatLangProfile(chatId) ?: return@privateCommand
             val languagePack = i18n.get(langProfile.lang)
             val pack = redisService.getCurrentPack(chatId)
             if (pack == null) {
@@ -81,7 +82,7 @@ class NewPackCommand(
                     chatId,
                     languagePack.getString("newpack.newpack", "max", TelegramResources.maxImages.toString()),
                 )
-                return@command
+                return@privateCommand
             }
             pack.let {
                 if (pack.files.isNotEmpty()) {
@@ -89,22 +90,22 @@ class NewPackCommand(
                 } else {
                     bot.sendMessage(chatId, languagePack.getString("newpack.tasklocked"))
                 }
-                return@command
+                return@privateCommand
             }
         }
     }
 
     private fun Dispatcher.finish() {
-        command("finish") {
+        privateCommand("finish") {
             val chatId = currentChatId()
-            val langProfile = redisService.currentChatLangProfile(chatId) ?: return@command
+            val langProfile = redisService.currentChatLangProfile(chatId) ?: return@privateCommand
             val languagePack = i18n.get(langProfile.lang)
             try {
                 val stickerCollectPack = redisService.getCurrentPack(chatId)!!
                 stickerCollectPack.let {
                     if (it.isLocked) {
                         bot.sendMessage(chatId, languagePack.getString("newpack.tasklocked"))
-                        return@command
+                        return@privateCommand
                     }
                     val map = args.toMap()
                     val format = map["-format"]
@@ -115,12 +116,15 @@ class NewPackCommand(
                     } else {
                         bot.sendMessage(chatId, languagePack.getString("nosticker"))
                     }
-                    return@command
+                    return@privateCommand
                 }
             } catch (ignore: Exception) {
-                bot.sendMessage(chatId, languagePack.getString("error.user_prompt", "user", TelegramResources.adminName))
+                bot.sendMessage(
+                    chatId,
+                    languagePack.getString("error.user_prompt", "user", TelegramResources.adminName)
+                )
                 logger.error("[finish command] get a error chat id is ${chatId.id} and error is", ignore)
-                return@command
+                return@privateCommand
             }
         }
     }
@@ -371,42 +375,24 @@ class NewPackCommand(
         val fpath = Fpath(zipPath)
         val collectPack = redisService.getCurrentPack(chatId)!!
         return withContext(Dispatchers.IO) {
-            val zipEntryPath = "${fpath.packPath}/${chatId.id}.zip"
-            collectPack.destImg.let { destimgs ->
+            val file = collectPack.destImg.let { destimgs ->
                 if (destimgs.isEmpty()) throw RuntimeException()
                 val files =
                     destimgs.map { dest ->
                         Path(dest).toFile()
                     }
-                val zipOutputStream =
-                    ZipOutputStream(FileOutputStream(Path(zipEntryPath).toFile()))
-                zipOutputStream.use {
-                    it.setComment(zipCommand)
-                    it.setLevel(5)
-                    files.forEach { file ->
-                        try {
-                            file.inputStream().use { input ->
-                                zipOutputStream.putNextEntry(ZipEntry(file.name))
-                                logger.info("[finish command] chat ${chatId.id} Adding file ${file.name} to zip file...")
-                                input.copyTo(zipOutputStream)
-                                zipOutputStream.closeEntry()
-                            }
-                        } catch (ignore: Exception) {
-                        }
-                    }
-                    it.finish()
-                }
+                packingZip(files, Path(fpath.packPath), "${chatId.id}", comment = zipCommand)
             }
-            zipEntryPath
+            file.absolutePath
         }
     }
 
     @OptIn(ExperimentalPathApi::class)
-    private suspend fun CommandHandlerEnvironment.cleanup(chat: ChatId.Id) {
+    private suspend fun cleanup(chat: ChatId.Id) {
         logger.info("[finish command] chat ${chat.id} file Cleanup")
         withContext(Dispatchers.IO) {
             redisService.removeCurrentPack(chat)
-            val path = Path("${currentPath()}${TelegramResources.imageStorage.drop(1)}/${chat.id}")
+            val path = Path("${currentPath}${TelegramResources.imageStorage.drop(1)}/${chat.id}")
             path.deleteRecursively()
         }
     }

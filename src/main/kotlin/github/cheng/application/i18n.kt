@@ -1,7 +1,7 @@
 package github.cheng.application
 
-import github.cheng.module.bot.currentPath
 import github.cheng.module.jackson
+import github.cheng.module.redis.jacksonTypeRef
 import github.cheng.module.thisLogger
 import org.slf4j.Logger
 import java.io.File
@@ -203,9 +203,9 @@ class I18nBuildException(message: String, cause: Throwable? = null) : RuntimeExc
 
 class I18nCheckException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
-data class Language @JvmOverloads constructor(val lang: String = "") {
+@JvmInline
+value class Language @JvmOverloads constructor(val lang: String = "") {
     companion object {
-        @JvmStatic
         fun of(lang: String) = Language(lang)
     }
 }
@@ -217,8 +217,6 @@ typealias GenerateLanguages = () -> Map<Language, Map<String, Any>>
 
 class I18nPacksBuildScope {
     // Map value should be a map or string, so this is Any.
-    // added TypePair using represents two types
-    internal val languages: MutableMap<Language, Map<String, Any>> = mutableMapOf()
     var generateLanguages: GenerateLanguages? = null
 
     fun build(): I18nPacks {
@@ -228,23 +226,6 @@ class I18nPacksBuildScope {
         return I18nPacksImpl(function).apply { checkLang() }
     }
 }
-
-@Suppress("UNCHECKED_CAST")
-internal class TypePair<E1, E2>(private val element: Any) {
-    fun getType1OrNull(): E1? {
-        return element as? E1
-    }
-
-    fun getType2OrNull(): E2? {
-        return element as? E2
-    }
-}
-
-internal inline fun <reified E1, reified E2> TypePair<E1, E2>.getType1() =
-    getType1OrNull() ?: throw TypeCastException("Can not cast to ${E1::class.java}")
-
-internal inline fun <reified E1, reified E2> TypePair<E1, E2>.getType2() =
-    getType2OrNull() ?: throw TypeCastException("Can not cast to ${E2::class.java}")
 
 private fun combine(
     root: String,
@@ -256,9 +237,9 @@ private fun combine(
         "$root.$relative"
     }
 
-fun Application.getJsonFiles(): Map<Language, Map<String, Any>> {
+fun Application.getJsonLanguageFiles(): Map<Language, Map<String, Any>> {
     val mapper = installAndInstance(jackson)
-    val tempDir = Path(currentPath() + "/temp")
+    val tempDir = Path("./temp")
     val files: File =
         if (tempDir.isDirectory()) {
             // 存在就获取文件
@@ -277,11 +258,9 @@ fun Application.getJsonFiles(): Map<Language, Map<String, Any>> {
             val fileName = file.name
             val language = fileName.dropLast(fileName.indexOf(".json"))
             val reader = file.bufferedReader()
-            val map = mapper.readValue(reader.readText(), Map::class.java)
+            val map: Map<String, Any> = mapper.readValue(reader.readText(), jacksonTypeRef())
 
-            @Suppress("unchecked_cast")
-            val data = map as? Map<String, Any> ?: throw IllegalArgumentException("json file is not valid")
-            Language.of(language) to data
+            Language.of(language) to map
         }
     files.deleteOnExit()
     return languages
@@ -292,7 +271,7 @@ private fun getI18nFile(): File {
         Thread.currentThread().contextClassLoader.getResourceAsStream("i18n.zip")
             ?: throw RuntimeException("need i18n files")
     val zipInputStream = ZipInputStream(i18nInputStream)
-    val tempDirectory = createTempDirectory(createTempDir("/temp"), "i18n_temp")
+    val tempDirectory = createTempDirectory(createTempDir("./temp"), "i18n_temp")
     zipInputStream.use { zip ->
         generateSequence { zip.nextEntry }.forEach { entry ->
             val outputFile = tempDirectory.resolve(entry.name)
@@ -310,5 +289,5 @@ private fun getI18nFile(): File {
 }
 
 fun createTempDir(name: String): Path {
-    return Path(currentPath() + name).createDirectories()
+    return Path(name).createDirectories()
 }

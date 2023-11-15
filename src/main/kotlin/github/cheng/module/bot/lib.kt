@@ -1,8 +1,18 @@
 package github.cheng.module.bot
 
+import com.github.kotlintelegrambot.dispatcher.Dispatcher
+import com.github.kotlintelegrambot.dispatcher.command
+import com.github.kotlintelegrambot.dispatcher.contact
+import com.github.kotlintelegrambot.dispatcher.handlers.HandleCommand
+import com.github.kotlintelegrambot.dispatcher.handlers.HandleMessage
+import com.github.kotlintelegrambot.dispatcher.message
+import kotlinx.coroutines.supervisorScope
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.io.path.Path
 import kotlin.io.path.name
 import kotlin.io.path.pathString
@@ -44,4 +54,26 @@ fun copyFile(
     Files.copy(sourceFile, destFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
 }
 
-fun currentPath() = Path("").toAbsolutePath().pathString
+private fun currentPath() = Path("").toAbsolutePath().pathString
+
+val currentPath by lazy { currentPath() }
+
+@OptIn(ExperimentalContracts::class)
+fun Dispatcher.privateMessage(handleMessage: HandleMessage) {
+    contract {
+        callsInPlace(handleMessage,InvocationKind.EXACTLY_ONCE)
+    }
+    message {
+        if (message.chat.type != "private") return@message
+        handleMessage()
+    }
+}
+
+fun Dispatcher.privateCommand(command: String, handleCommand: HandleCommand) {
+    command(command) {
+        if (message.chat.type != "private") {
+            return@command
+        }
+        handleCommand()
+    }
+}

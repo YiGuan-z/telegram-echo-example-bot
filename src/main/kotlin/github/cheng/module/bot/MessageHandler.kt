@@ -2,7 +2,6 @@ package github.cheng.module.bot
 
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
-import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.MessageEntity
 import com.github.kotlintelegrambot.entities.TelegramFile
@@ -50,8 +49,7 @@ class MessageHandler(
     val logger = thisLogger<MessageHandler>()
 
     override val dispatch: Dispatcher.() -> Unit = {
-        message {
-            if (message.chat.type != "private") return@message
+        privateMessage {
             val chatId = currentChatId()
             logger.info("receive message from ${message.chat.id}")
             // 前面有一层[InitUserHandler]在创建语言配置，所以这里是不会为空的。
@@ -349,7 +347,7 @@ class MessageHandler(
         logger.info("[Message Handle] chat ${chat.id} file Cleanup")
         withContext(Dispatchers.IO) {
             redisService.removeCurrentPack(chat)
-            val path = Path("${currentPath()}${TelegramResources.imageStorage.drop(1)}/${chat.id}")
+            val path = Path("${currentPath}${TelegramResources.imageStorage.drop(1)}/${chat.id}")
             path.deleteRecursively()
         }
     }

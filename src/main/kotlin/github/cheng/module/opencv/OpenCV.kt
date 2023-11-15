@@ -15,12 +15,9 @@ import org.bytedeco.javacv.Frame
 import org.bytedeco.javacv.OpenCVFrameConverter
 import org.bytedeco.opencv.opencv_java
 import org.opencv.core.Mat
-import org.opencv.core.Size
 import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
 import java.nio.file.Path
-import kotlin.io.path.Path
-import kotlin.io.path.pathString
 
 /**
  *
@@ -31,7 +28,9 @@ import kotlin.io.path.pathString
 object OpenCVService {
     private val frameConverter = OpenCVFrameConverter.ToMat()
 
-    fun init() {
+    private val logger = thisLogger<OpenCVService>()
+
+    init {
         Loader.load(opencv_java::class.java)
         logger.info("opencv is ready")
         ShutDown.addShutDownHook("opencv") {
@@ -39,7 +38,6 @@ object OpenCVService {
         }
     }
 
-    private val logger = thisLogger<OpenCVService>()
 
     suspend fun bgr2rgb(path: String): Mat {
         return conversion(path, Imgproc.COLOR_BGR2RGB)
@@ -59,7 +57,7 @@ object OpenCVService {
     ) {
         withContext(Dispatchers.Default) {
             try {
-                if (savePath.basename().suffix().uppercase() == "GIF") {
+                if (savePath.basename().suffix().equals("GIF", true)) {
                     FFmpegFrameGrabber(src.toFile())
                         .use { grabber ->
                             grabber.start()
@@ -89,37 +87,6 @@ object OpenCVService {
         }
     }
 
-    @Deprecated("这是一个废弃的方法，它没有将image和video分开，并且webp也不用转换")
-    suspend fun conversionImageFile(
-        path: String,
-        to: String,
-        width: Double,
-        height: Double,
-        scale: Double,
-    ) {
-        withContext(Dispatchers.IO) {
-            val path = Path(path).toAbsolutePath().pathString
-            val to = Path(to).toAbsolutePath().pathString
-
-            logger.info("[openCV] conversionImageFile $path $to")
-            val src = Imgcodecs.imread(path)
-            if (src.empty()) throw FileNotSupport("Not support file $path")
-            val dst = Mat()
-            val size = Size(width * scale, height * scale)
-            withContext(Dispatchers.Default) {
-                if (src.empty()) {
-                    logger.info("[openCV] conversionImageFile $path is empty")
-                    throw RuntimeException()
-                } else {
-                    logger.info("[openCV] conversionImageFile $path is not empty")
-                }
-                Imgproc.resize(src, dst, size)
-            }
-            withContext(Dispatchers.IO) {
-                Imgcodecs.imwrite(to, dst)
-            }
-        }
-    }
 
     suspend fun conversion(
         path: String,
@@ -139,7 +106,7 @@ object OpenCVService {
 
 class FileNotSupport(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
 
-private fun FFmpegFrameRecorder.writeFrame(grabber: FFmpegFrameGrabber, frameSleep: Int) {
+private fun FFmpegFrameRecorder.writeFrame(grabber: FFmpegFrameGrabber, frameSleep: Int) =
     use { recorder ->
         var frame: Frame?
         do {
@@ -152,4 +119,3 @@ private fun FFmpegFrameRecorder.writeFrame(grabber: FFmpegFrameGrabber, frameSle
             }
         } while (frame != null)
     }
-}

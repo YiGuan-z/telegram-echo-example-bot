@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.scripting.compiler.plugin.impl.failure
 import java.io.FileOutputStream
 import java.nio.file.Files
 import java.util.zip.ZipEntry
@@ -45,10 +46,10 @@ dependencies {
     // implementation("io.coil-kt:coil:2.4.0")
     // https://github.com/bytedeco/javacv
     // coil is android library, but running on the server
-//    implementation("org.bytedeco:javacv-platform:1.5.9")
+    implementation("org.bytedeco:javacv-platform:1.5.9")
 
     // https://github.com/bytedeco/javacv/issues/2087 upgrade opencv 480
-    implementation("org.bytedeco:javacv-platform:1.5.10-SNAPSHOT")
+//    implementation("org.bytedeco:javacv-platform:1.5.10-SNAPSHOT")
 
 //    implementation("com.groupdocs:groupdocs-conversion:23.10")
     // https://github.com/Him188/yamlkt
@@ -116,10 +117,10 @@ task("updateI18n") {
     val newZipEntryPath = Path("./src/main/resources/i18n.zip")
     val dir = Path("./src/main/resources/i18n/").toFile()
     ZipOutputStream(FileOutputStream(newZipEntryPath.toFile())).use { zipOutPut ->
-        dir.listFiles()?.forEach { file ->
-            if (file.name.endsWith(".json")) {
-                file.inputStream().use { input ->
-                    zipOutPut.putNextEntry(ZipEntry(file.name))
+        dir.listFiles()?.forEach { zipEntry ->
+            if (zipEntry.name.endsWith(".json")) {
+                zipEntry.inputStream().use { input ->
+                    zipOutPut.putNextEntry(ZipEntry(zipEntry.name))
                     input.copyTo(zipOutPut)
                     zipOutPut.closeEntry()
                 }
@@ -127,4 +128,8 @@ task("updateI18n") {
         }
         zipOutPut.finish()
     }
+}
+
+buildscript {
+
 }
